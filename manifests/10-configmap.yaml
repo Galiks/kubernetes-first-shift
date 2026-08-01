@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap
+  namespace: pavel-lab
+  labels:
+    env: development
+data:
+  APP_MODE: training
+  index.html: | pavel.k8s-lab
