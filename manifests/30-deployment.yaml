@@ -1,4 +1,4 @@
-# apiVersion — указывает версию Kubernetes API. Для Deployment используется apps/v1
+# apiVersion — указывает версию Kubernetes API. Для Deployment используется v1
 apiVersion: apps/v1
 # kind — тип ресурса. Здесь мы создаём Deployment — контроллер, управляющий Pod'ами
 kind: Deployment
@@ -24,7 +24,7 @@ spec:
   # selector — как Deployment находит Pod'ы, которыми управляет
   selector:
     matchLabels:
-      # Pod должен иметь метку app: nginx
+      # Pod должен иметь метку app: web
       app: web
   # template — шаблон Pod'а, который будет создавать Deployment
   template:
@@ -56,7 +56,7 @@ spec:
                 # configMapKeyRef — ссылка на ключ из ConfigMap
                 configMapKeyRef:
                   # name — имя ConfigMap, из которого берём значение
-                  name: configmap
+                  name: web-config
                   # key — конкретный ключ внутри этого ConfigMap
                   key: APP_MODE
           # volumeMounts — точки монтирования томов (volume) внутрь контейнера
@@ -65,9 +65,33 @@ spec:
             - name: config-volume
               # mountPath — путь в файловой системе контейнера, куда будет примонтирован том
               mountPath: /usr/share/nginx/html
+              readOnly: true
             - name: secret-volume
               mountPath: /etc/lab-secret
               readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
       # volumes — описание томов, которые доступны Pod'у
       volumes:
         # - name — имя тома для связи с volumeMounts
@@ -75,7 +99,7 @@ spec:
           # configMap — том создаётся из данных ConfigMap
           configMap:
             # name — имя ConfigMap, из которого берём данные
-            name: configmap
+            name: web-config
             # items — фильтр: какие именно ключи из ConfigMap попадут в том
             items:
               # - key — ключ из ConfigMap (index.html)
@@ -84,4 +108,4 @@ spec:
                 path: index.html
         - name: secret-volume
           secret:
-            name: web-secret
+            secretName: web-secret
