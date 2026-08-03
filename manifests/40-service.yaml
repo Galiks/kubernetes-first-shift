@@ -5,7 +5,7 @@ metadata:
   namespace: pavel-lab
 spec:
   type: ClusterIP
-  selector: 
+  selector:
     app: web
   ports:
     - name: http

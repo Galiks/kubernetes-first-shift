@@ -1,0 +1,101 @@
+=== date ===
+2026-08-03T10:02:28+04:00
+
+=== context ===
+minikube
+
+=== deployment,replicaset,pods ===
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                SELECTOR
+deployment.apps/web   2/2     2            2           34s   web          nginx:1.28.0-alpine   app=web
+
+NAME                             DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                SELECTOR
+replicaset.apps/web-69d9dd95db   2         2         2       34s   web          nginx:1.28.0-alpine   app=web,pod-template-hash=69d9dd95db
+
+NAME                       READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+pod/web-69d9dd95db-vj78n   1/1     Running   0          34s   10.244.0.25   minikube   <none>           <none>
+pod/web-69d9dd95db-w59zn   1/1     Running   0          34s   10.244.0.24   minikube   <none>           <none>
+
+=== service,endpointslices ===
+NAME          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+service/web   ClusterIP   10.97.43.104   <none>        80/TCP    34s
+
+NAME                                       ADDRESSTYPE   PORTS   ENDPOINTS                 AGE
+endpointslice.discovery.k8s.io/web-9g62m   IPv4          80      10.244.0.25,10.244.0.24   34s
+
+=== describe deployment web ===
+Name:                   web
+Namespace:              pavel-lab
+CreationTimestamp:      Mon, 03 Aug 2026 10:01:54 +0400
+Labels:                 app=web
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=web
+Replicas:               2 desired | 2 updated | 2 total | 2 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  0 max unavailable, 1 max surge
+Pod Template:
+  Labels:  app=web
+  Containers:
+   web:
+    Image:      nginx:1.28.0-alpine
+    Port:       80/TCP (http)
+    Host Port:  0/TCP (http)
+    Limits:
+      cpu:     200m
+      memory:  128Mi
+    Requests:
+      cpu:      50m
+      memory:   32Mi
+    Liveness:   http-get http://:http/ delay=10s timeout=2s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:http/ delay=3s timeout=2s period=5s #success=1 #failure=3
+    Environment:
+      APP_MODE:  <set to the key 'APP_MODE' of config map 'web-config'>  Optional: false
+      POD_NAME:   (v1:metadata.name)
+    Mounts:
+      /etc/lab-secret from web-secret (ro)
+      /usr/share/nginx/html from web-config (ro)
+  Volumes:
+   web-config:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      web-config
+    Optional:  false
+   web-secret:
+    Type:          Secret (a volume populated by a Secret)
+    SecretName:    web-secret
+    Optional:      false
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   web-69d9dd95db (2/2 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  34s   deployment-controller  Scaled up replica set web-69d9dd95db from 0 to 2
+
+=== rollout history ===
+deployment.apps/web 
+REVISION  CHANGE-CAUSE
+1         <none>
+
+
+=== top pods ===
+NAME                   CPU(cores)   MEMORY(bytes)   
+web-69d9dd95db-59xhf   1m           7Mi             
+web-69d9dd95db-88b7g   1m           7Mi  
+
+=== smoke.sh ===
+=== smoke.sh: verifying web in pavel-lab ===
+OK: context is minikube
+pavel-lab is exists
+deployment "web" successfully rolled out
+OK: 2 ready replicas
+OK: service 'web' has 2 endpoint(s)
+OK: APP_MODE=training-v2
+OK: page contains 'pavel-k8s-lab v2'
+OK: secret file present
+PASS

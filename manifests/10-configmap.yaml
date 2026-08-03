@@ -3,15 +3,13 @@ kind: ConfigMap
 metadata:
   name: web-config
   namespace: pavel-lab
-  labels:
-    env: development
 data:
-  APP_MODE: training
+  APP_MODE: training-v2
   index.html: |-
     <!DOCTYPE html>
     <html>
     <head><title>Pavel K8s Lab</title></head>
     <body>
-      <h1>pavel-k8s-lab v1</h1>
+      <h1>pavel-k8s-lab v2</h1>
     </body>
     </html>
