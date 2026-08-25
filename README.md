@@ -68,15 +68,220 @@ Startup probe нужна для приложений с долгим холод�
 
 Важно: если Pod существует, но не Ready (readiness не проходит), его IP **не попадает** в EndpointSlice, и трафик на него не идёт. Это развязывает жизненный цикл процесса и приём трафика.
 
+## Первый запуск
+
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl apply -f manifests/ 
+namespace/pavel-lab configured 
+configmap/web-config configured 
+secret/web-secret configured 
+deployment.apps/web configured 
+service/web configured
+```
+
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab rollout status deployment/web --timeout=120s 
+deployment "web" successfully rolled out
+```
+
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab get all 
+NAME                       READY   STATUS    RESTARTS   AGE 
+pod/web-84f54fd85f-k44b8   1/1     Running   0          15m 
+pod/web-84f54fd85f-kk7tc   1/1     Running   0          15m 
+
+NAME          TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE 
+service/web   ClusterIP   10.111.17.151   <none>        80/TCP    19d 
+
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE 
+deployment.apps/web   2/2     2            2           19d 
+
+NAME                             DESIRED   CURRENT   READY   AGE 
+replicaset.apps/web-69d9dd95db   0         0         0       19d 
+replicaset.apps/web-84f54fd85f   2         2         2       15m 
+```
+
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab get pods -o wide
+NAME                   READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+web-84f54fd85f-k44b8   1/1     Running   0          94m   10.244.0.52   minikube   <none>           <none>
+web-84f54fd85f-kk7tc   1/1     Running   0          94m   10.244.0.51   minikube   <none>           <none>
+```
+
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab get configmap,secret
+NAME                         DATA   AGE
+configmap/kube-root-ca.crt   1      19d
+configmap/web-config         2      19d
+
+NAME                TYPE     DATA   AGE
+secret/web-secret   Opaque   1      19d
+```
+
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab get endpointslices
+NAME        ADDRESSTYPE   PORTS   ENDPOINTS                 AGE
+web-l55rr   IPv4          80      10.244.0.51,10.244.0.52   19d
+```
+
+### Проверить ConfigMap и Downward API
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab exec deploy/web -- printenv APP_MODE
+training-v1
+```
+
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab exec deploy/web -- printenv POD_NAME
+web-84f54fd85f-kk7tc
+```
+
+### Проверить Secret
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab exec deploy/web -- sh -c 'test -f /etc/lab-secret/token && echo SECRET_FILE_OK'
+SECRET_FILE_OK
+```
+
+### Проверить Service изнутри кластера
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab exec deploy/web -- wget -qO- http://web
+<!DOCTYPE html>
+<html>
+<head><title>Pavel K8s Lab</title></head>
+<body>
+  <h1>pavel-k8s-lab v2</h1>
+</body>
+```
+Ответ отличается из-за проверок из 10 пункта.
+
+### Проверить доступ с Ubuntu
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab port-forward service/web 8080:80
+Forwarding from 127.0.0.1:8080 -> 80
+Forwarding from [::1]:8080 -> 80
+Handling connection for 8080
+```
+
+```
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ curl -fsS http://127.0.0.1:8080
+<!DOCTYPE html>
+<html>
+<head><title>Pavel K8s Lab</title></head>
+<body>
+  <h1>pavel-k8s-lab v2</h1>
+</body>
+```
+
 ## Самовосстановление
+### Удалил поды
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab delete pod -l app=web --field-selector=status.phase=Running \
+pod "web-69d9dd95db-h98th" deleted from pavel-lab namespace \
+pod "web-69d9dd95db-sk7g7" deleted from pavel-lab namespace
+
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab get pods --watch \
+NAME                   READY   STATUS    RESTARTS      AGE \
+web-69d9dd95db-h98th   1/1     Running   1 (19d ago)   19d \
+web-69d9dd95db-sk7g7   1/1     Running   1 (19d ago)   19d \
+web-69d9dd95db-h98th   1/1     Terminating   1 (19d ago)   19d \
+web-69d9dd95db-sk7g7   1/1     Terminating   1 (19d ago)   19d \
+web-69d9dd95db-gpcqj   0/1     Pending       0             0s \
+web-69d9dd95db-h98th   1/1     Terminating   1 (19d ago)   19d \
+web-69d9dd95db-gpcqj   0/1     Pending       0             0s \
+web-69d9dd95db-fmdd9   0/1     Pending       0             0s \
+web-69d9dd95db-sk7g7   1/1     Terminating   1 (19d ago)   19d \
+web-69d9dd95db-fmdd9   0/1     Pending       0             0s \
+web-69d9dd95db-gpcqj   0/1     ContainerCreating   0             0s \
+web-69d9dd95db-fmdd9   0/1     ContainerCreating   0             0s \
+web-69d9dd95db-h98th   0/1     Completed           1 (19d ago)   19d \
+web-69d9dd95db-sk7g7   0/1     Completed           1 (19d ago)   19d \
+web-69d9dd95db-h98th   0/1     Completed           1 (19d ago)   19d \
+web-69d9dd95db-h98th   0/1     Completed           1 (19d ago)   19d \
+web-69d9dd95db-sk7g7   0/1     Completed           1 (19d ago)   19d \
+web-69d9dd95db-sk7g7   0/1     Completed           1 (19d ago)   19d \
+web-69d9dd95db-fmdd9   0/1     Running             0             1s \
+web-69d9dd95db-gpcqj   0/1     Running             0             1s \
+web-69d9dd95db-gpcqj   1/1     Running             0             7s \
+web-69d9dd95db-fmdd9   1/1     Running             0             7s 
+
+
+### Изменил количество реплик
+Сначала до 3 увеличил, потом убрал до 2 \
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab get pods --watch \
+NAME                   READY   STATUS    RESTARTS   AGE \
+web-69d9dd95db-fmdd9   1/1     Running   0          13m \
+web-69d9dd95db-gpcqj   1/1     Running   0          13m \
+web-69d9dd95db-vxsd7   0/1     Pending   0          0s \
+web-69d9dd95db-vxsd7   0/1     Pending   0          0s \
+web-69d9dd95db-vxsd7   0/1     ContainerCreating   0          0s \
+web-69d9dd95db-vxsd7   0/1     Running             0          1s \
+web-69d9dd95db-vxsd7   1/1     Running             0          7s \
+web-69d9dd95db-fmdd9   1/1     Terminating         0          34m \
+web-69d9dd95db-fmdd9   1/1     Terminating         0          34m \
+web-69d9dd95db-fmdd9   0/1     Completed           0          34m \
+web-69d9dd95db-fmdd9   0/1     Completed           0          34m \
+web-69d9dd95db-fmdd9   0/1     Completed           0          34m 
+
+$kubectl -n pavel-lab get endpointslices \
+NAME        ADDRESSTYPE   PORTS   ENDPOINTS                             AGE \
+web-l55rr   IPv4          80      10.244.0.46,10.244.0.49,10.244.0.50   19d 
+
+$kubectl -n pavel-lab get endpointslices \
+NAME        ADDRESSTYPE   PORTS   ENDPOINTS                 AGE \
+web-l55rr   IPv4          80      10.244.0.46,10.244.0.49   19d 
+
 
 Когда пользователь удаляет Pod командой `kubectl delete pod`, ReplicaSet, управляемый Deployment, немедленно видит расхождение между желаемым (`replicas: 2`) и фактическим состоянием. ReplicaSet создаёт новый Pod через API-сервер, kubelet на ноде запускает контейнер, readiness/liveness probes подтверждают работоспособность, и только после этого Pod попадает в EndpointSlice.
 
 Удаление Pod не равно удалению приложения, потому что источник правды — это Deployment, а не сам Pod. Pod — это эфемерный ресурс, который Deployment/ReplicaSet может пересоздать в любой момент. Удаляя Pod, мы убираем только текущий экземпляр, а не декларацию о том, что Pod должен существовать.
 
+## Обновление ConfigMap
+
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab exec deploy/web -- wget -qO- http://127.0.0.1
+```
+<!DOCTYPE html>
+<html>
+<head><title>Pavel K8s Lab</title></head>
+<body>
+  <h1>pavel-k8s-lab v2</h1>
+</body>
+```
+
+Потом сменил v2 -> v1 и залил файл: kubectl apply -f manifests/10-configmap.yaml
+Спустя какое-то время:
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab exec deploy/web -- wget -qO- http://127.0.0.1
+```
+<!DOCTYPE html>
+<html>
+<head><title>Pavel K8s Lab</title></head>
+<body>
+  <h1>pavel-k8s-lab v1</h1>
+</body>
+```
+
+APP_MODE без изменений: \
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab exec deploy/web -- printenv APP_MODE
+training-v2
+
+После rollout APP_MODE изменился: \
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab rollout restart deployment/web \
+deployment.apps/web restarted \
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab rollout status deployment/web --timeout=120s \
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated... \
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated... \
+Waiting for deployment "web" rollout to finish: 1 out of 3 new replicas have been updated... \
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated... \
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated... \
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated... \
+Waiting for deployment "web" rollout to finish: 2 out of 3 new replicas have been updated... \
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination... \
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination... \
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination... \
+deployment "web" successfully rolled out \
+pavel@pavel-BOD-WXX9:~/Рабочий стол/Projects/kubernetes-first-shift$ kubectl -n pavel-lab exec deploy/web -- printenv APP_MODE \
+training-v1
+
 ## Типовые неисправности
 
-
+evidence/failures.md
 
 ## Ответы на вопросы
 
