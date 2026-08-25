@@ -40,7 +40,8 @@ echo "OK: ${EXPECTED_REPLICAS} ready replicas"
 # 5. У Service есть endpoints
 ENDPOINTS_COUNT=$(kubectl -n "${NS}" get endpointslices \
   -l "kubernetes.io/service-name=${SVC}" \
-  -o jsonpath='{.items[0].endpoints[*].addresses}' | tr ' ' '\n' | grep -c . || true)
+  -o jsonpath='{range .items[*]}{range .endpoints[?(@.conditions.ready==true)]}{range .addresses[*]}{.}{"\n"}{end}{end}{end}' \
+  | grep -c . || true)
 if [[ "${ENDPOINTS_COUNT}" -lt 1 ]]; then
   echo "FAIL: service '${SVC}' has no ready endpoints" >&2
   exit 1

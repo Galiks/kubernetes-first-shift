@@ -62,7 +62,7 @@ Startup probe нужна для приложений с долгим холод�
 Когда внешний клиент (например, `curl`) обращается к Service, происходит следующее:
 1. **Service** получает запрос на свой виртуальный IP и порт 80. У Service есть selector `app: web`.
 2. Kubernetes поддерживает объект **EndpointSlice**, который автоматически формирует список IP-адресов всех Pod, удовлетворяющих selector Service и проходящих readiness probe.
-3. kube-proxy на каждой ноде перехватывает обращение к IP Service и с помощью iptables/IPVS перенаправляет пакет на конкретный IP одного из Pod из EndpointSlice (обычно round-robin).
+3. kube-proxy на каждой ноде перехватывает обращение к IP Service и с помощью iptables/IPVS перенаправляет пакет на конкретный IP одного из Pod из EndpointSlice. В режиме iptables backend выбирается случайно из готовых адресов EndpointSlice (не round-robin; round-robin — только в режимах userspace/IPVS).
 4. Запрос приходит в контейнер **nginx** на его `containerPort` (порт 80, именованный как `http`). Nginx отдаёт содержимое, в нашем случае — `index.html`, примонтированный из ConfigMap.
 5. Ответ идёт обратно тем же путём.
 
@@ -84,7 +84,7 @@ Startup probe нужна для приложений с долгим холод�
 Pod — это один-единственный контейнер (или группа контейнеров), который живёт до перезапуска или удаления. Deployment — это контроллер, который управляет ReplicaSet, а тот создаёт и поддерживает нужное число Pod. Удалив Pod вручную, Deployment его пересоздаст. Deployment — это декларация «хочу N экземпляров этого Pod», а не сам Pod.
 
 ### 2. Как Service находит подходящие Pod?
-Service использует поле `spec.selector.matchLabels` — набор меток. EndpointSlice controller периодически опрашивает все Pod в Namespace, и те, у которых метки совпали с selector, добавляются в EndpointSlice как адреса. Когда Pod удаляется или становится NotReady, его адрес убирается из EndpointSlice. Selector обновляется только при изменении YAML и `apply`.
+Service использует плоскую карту `spec.selector` (например `app: web`) — набор пар «ключ-значение», которые должны совпадать с labels Pod. В отличие от Deployment/ReplicaSet, у Service нет `matchLabels`. EndpointSlice controller следит за Pod и Service через watch/informer (событийная модель, а не периодический опрос), и те Pod, у которых метки совпали с selector, добавляются в EndpointSlice как адреса. Когда Pod удаляется или становится NotReady, его адрес убирается из EndpointSlice. Selector обновляется только при изменении YAML и `apply`.
 
 ### 3. Почему `containerPort` сам по себе не публикует приложение?
 `containerPort` — это декларативная подсказка для документации и для Service (через `targetPort: name`). Она не открывает порт наружу кластера. Чтобы трафик доходил до Pod, нужен Service с правильным selector, который через kube-proxy пробрасывает пакеты на IP Pod. Без Service `containerPort` доступен только внутри самого Pod или между Pod через Pod IP.
