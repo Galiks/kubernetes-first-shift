@@ -510,14 +510,113 @@ web-84f54fd85f-kk7tc   1/1     Running   1 (99m ago)   7h18m
 ## Неисправность 4. Pod работает, но не готов
 
 ### Симптом:
-под в статусе Running, но 0/1 Ready; EndpointSlice пуст; wget через Service не работает
-### Команды диагностики:
-```bash
-kubectl -n pavel-lab get pods --watch
-kubectl -n pavel-lab describe pod <имя-pod>
-kubectl -n pavel-lab get endpointslices
-kubectl -n pavel-lab logs <имя-pod>
+`kubectl -n pavel-lab get pods --watch`
 ```
+NAME                   READY   STATUS    RESTARTS      AGE
+web-84f54fd85f-k44b8   1/1     Running   2 (20h ago)   28h
+web-84f54fd85f-kk7tc   1/1     Running   2 (20h ago)   28h
+web-7cf69b5559-s4vf8   0/1     Pending   0             0s
+web-7cf69b5559-s4vf8   0/1     Pending   0             0s
+web-7cf69b5559-s4vf8   0/1     ContainerCreating   0             0s
+web-7cf69b5559-s4vf8   0/1     Running             0             1s
+```
+под в статусе Running, но 0/1 Ready; 
+
+`kubectl -n pavel-lab describe pod web-7cf69b5559-s4vf8`
+```
+Name:             web-7cf69b5559-s4vf8
+Namespace:        pavel-lab
+Priority:         0
+Service Account:  default
+Node:             minikube/192.168.49.2
+Start Time:       Wed, 26 Aug 2026 21:14:36 +0400
+Labels:           app=web
+                  pod-template-hash=7cf69b5559
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-08-25T16:53:38+04:00
+Status:           Running
+IP:               10.244.0.66
+IPs:
+  IP:           10.244.0.66
+Controlled By:  ReplicaSet/web-7cf69b5559
+Containers:
+  web:
+    Container ID:   docker://ce2a93dc8da6c87be70290f40e815d15b70a3d6992af6bdb869bdf4ee72252ee
+    Image:          nginx:1.28.0-alpine
+    Image ID:       docker-pullable://nginx@sha256:30f1c0d78e0ad60901648be663a710bdadf19e4c10ac6782c235200619158284
+    Port:           80/TCP (http)
+    Host Port:      0/TCP (http)
+    State:          Running
+      Started:      Wed, 26 Aug 2026 21:14:36 +0400
+    Ready:          False
+    Restart Count:  0
+    Limits:
+      cpu:     200m
+      memory:  128Mi
+    Requests:
+      cpu:      50m
+      memory:   32Mi
+    Liveness:   http-get http://:http/ delay=10s timeout=2s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:http/not-found delay=3s timeout=2s period=5s #success=1 #failure=3
+    Environment:
+      APP_MODE:  <set to the key 'APP_MODE' of config map 'web-config'>  Optional: false
+      POD_NAME:  web-7cf69b5559-s4vf8 (v1:metadata.name)
+    Mounts:
+      /etc/lab-secret from web-secret (ro)
+      /usr/share/nginx/html from web-config (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-t9hkd (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  web-config:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      web-config
+    Optional:  false
+  web-secret:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  web-secret
+    Optional:    false
+  kube-api-access-t9hkd:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                   From               Message
+  ----     ------     ----                  ----               -------
+  Normal   Scheduled  13m                   default-scheduler  Successfully assigned pavel-lab/web-7cf69b5559-s4vf8 to minikube
+  Normal   Pulled     13m                   kubelet            spec.containers{web}: Container image "nginx:1.28.0-alpine" already present on machine and can be accessed by the pod
+  Normal   Created    13m                   kubelet            spec.containers{web}: Container created
+  Normal   Started    13m                   kubelet            spec.containers{web}: Container started
+  Warning  Unhealthy  3m1s (x126 over 13m)  kubelet            spec.containers{web}: Readiness probe failed: HTTP probe failed with statuscode: 404
+```
+Важная часть - `Warning  Unhealthy  3m1s (x126 over 13m)  kubelet            spec.containers{web}: Readiness probe failed: HTTP probe failed with statuscode: 404`
+EndpointSlice не пуст:
+```
+NAME        ADDRESSTYPE   PORTS   ENDPOINTS                             AGE
+web-l55rr   IPv4          80      10.244.0.64,10.244.0.63,10.244.0.66   20d
+```
+`kubectl -n pavel-lab logs web-7cf69b5559-s4vf8`
+Тоже указывает на проблему 404:
+```
+2026/08/26 17:33:56 [error] 35#35: *357 open() "/usr/share/nginx/html/not-found" failed (2: No such file or directory), client: 10.244.0.1, server: localhost, request: "GET /not-found HTTP/1.1", host: "10.244.0.66:80"
+10.244.0.1 - - [26/Aug/2026:17:33:56 +0000] "GET /not-found HTTP/1.1" 404 153 "-" "kube-probe/1.35" "-"
+```
+### Команды диагностики:
+`kubectl -n pavel-lab get pods --watch`
+`kubectl -n pavel-lab describe pod <имя-pod>`
+`kubectl -n pavel-lab get endpointslices`
+`kubectl -n pavel-lab logs <имя-pod>`
+
 ### Что показали Events, describe, logs или EndpointSlice:
 Events:
   Type     Reason     Age                    From               Message
@@ -529,7 +628,13 @@ Events:
   Warning  Unhealthy  118s (x25 over 3m55s)  kubelet            spec.containers{web}: Readiness probe failed: HTTP probe failed with statuscode: 404
 ### Причина: 
 /not found возвращает 404, но liveness возвращает 200 - из-за указания на разные пути
+Nginx корректно отвечает HTTP 404 на этот путь → readiness получает 404 → kubelet считает Pod неготовым → Pod исключается из EndpointSlice, Service не шлёт на него трафик. liveness probe по-прежнему смотрит на `/` (HTTP 200) → рестарта контейнера не происходит, процесс nginx продолжает работать штатно.
 ### Исправление:
 Скорректировать пути
 ### Как проверить восстановление: 
-`get pods`
+`kubectl -n pavel-lab get pods`
+```
+NAME                   READY   STATUS    RESTARTS      AGE
+web-84f54fd85f-k44b8   1/1     Running   2 (21h ago)   28h
+web-84f54fd85f-kk7tc   1/1     Running   2 (21h ago)   28h
+```
