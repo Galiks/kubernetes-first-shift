@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+.git
+.gitignore
+.venv
+venv
+tests
+evidence
+chart
+cluster
+scripts
+*.md
+.pytest_cache
+.mypy_cache
+.helm-charts
