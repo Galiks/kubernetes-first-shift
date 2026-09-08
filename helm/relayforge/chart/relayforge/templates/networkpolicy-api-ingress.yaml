@@ -1,0 +1,20 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "relayforge.fullname" . }}-api-ingress
+  labels:
+    {{- include "relayforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: api
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - port: 8080
+      protocol: TCP
+{{- end }}

@@ -1,0 +1,15 @@
+{{- if ge (int .Values.api.replicas) 2 }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "relayforge.fullname" . }}-api
+  labels:
+    {{- include "relayforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "relayforge.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+{{- end }}

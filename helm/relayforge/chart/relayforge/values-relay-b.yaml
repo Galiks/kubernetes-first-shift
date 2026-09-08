@@ -1,0 +1,20 @@
+clientAuthSecret:
+  name: relay-b-client-auth
+  key: client-token
+
+worker:
+  signingSecret:
+    name: relay-b-signing
+    key: signing-key
+
+testSink:
+  verificationSecret:
+    name: relay-b-verification
+    key: verification-key
+  controlSecret:
+    name: relay-b-verification
+    key: control-token
+
+destinations:
+  test:
+    url: "http://{{ .Release.Name }}-relayforge-test-sink:8080"

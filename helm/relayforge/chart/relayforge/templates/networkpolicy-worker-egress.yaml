@@ -1,0 +1,47 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "relayforge.fullname" . }}-worker-egress
+  labels:
+    {{- include "relayforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: delivery
+  policyTypes:
+  - Egress
+  egress:
+  # In-cluster test-sink (если включён)
+  {{- if .Values.testSink.enabled }}
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: test-sink
+    ports:
+    - port: 8080
+      protocol: TCP
+  {{- end }}
+  # Внешние destinations (CIDR из values)
+  {{- range .Values.networkPolicy.externalDestinationCidrs }}
+  - to:
+    - ipBlock:
+        cidr: {{ . }}
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 80
+      protocol: TCP
+  {{- end }}
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+{{- end }}

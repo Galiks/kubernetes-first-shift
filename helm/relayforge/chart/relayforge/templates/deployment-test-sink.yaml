@@ -1,0 +1,139 @@
+{{- if .Values.testSink.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "relayforge.fullname" . }}-test-sink
+  labels:
+    {{- include "relayforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test-sink
+spec:
+  # Test-sink всегда одна реплика (требование задания)
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "relayforge.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: test-sink
+  template:
+    metadata:
+      labels:
+        {{- include "relayforge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: test-sink
+      annotations:
+        # Перезапуск при ротации секретов
+        checksum/secretRevision: {{ .Values.secretRevision | sha256sum }}
+    spec:
+      # Отдельный ServiceAccount без RBAC
+      serviceAccountName: {{ include "relayforge.fullname" . }}-test-sink
+      automountServiceAccountToken: false
+
+      # Pod-level security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        # fsGroup даёт non-root процессу право писать в emptyDir
+        # БЕЗ privileged и БЕЗ root init container (требование задания)
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+      - name: test-sink
+        image: {{ include "relayforge.image" . }}
+        imagePullPolicy: IfNotPresent
+        # Exec-form без shell (требование задания)
+        command: ["python", "-m", "relayforge", "test-sink"]
+
+        env:
+        - name: RELAYFORGE_RELEASE
+          value: {{ .Release.Name | quote }}
+        - name: RELAYFORGE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: RELAYFORGE_TEST_SINK_PORT
+          value: "8080"
+        - name: RELAYFORGE_RECEIPTS_DIR
+          value: "/var/lib/relayforge-test-sink/receipts"
+
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+
+        # Probes
+        startupProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 2
+          failureThreshold: 15
+        readinessProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 10
+          failureThreshold: 3
+
+        resources:
+          requests:
+            cpu: {{ .Values.testSink.resources.requests.cpu | default "50m" }}
+            memory: {{ .Values.testSink.resources.requests.memory | default "64Mi" }}
+          limits:
+            cpu: {{ .Values.testSink.resources.limits.cpu | default "200m" }}
+            memory: {{ .Values.testSink.resources.limits.memory | default "128Mi" }}
+
+        # Restricted container security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+
+        volumeMounts:
+        # Секреты: verification key + control-token (read-only)
+        - name: secrets
+          mountPath: /etc/relayforge/secrets
+          readOnly: true
+        # emptyDir для receipts (read-write, но только для тестовой оснастки)
+        - name: receipts
+          mountPath: /var/lib/relayforge-test-sink/receipts
+        # tmp для Python (readOnlyRootFilesystem требует /tmp)
+        - name: tmp
+          mountPath: /tmp
+
+      volumes:
+      # Секреты монтируются как файлы (требование задания)
+      - name: secrets
+        projected:
+          sources:
+          # Verification key (для проверки HMAC)
+          - secret:
+              name: {{ .Values.testSink.verificationSecret.name }}
+              items:
+              - key: {{ .Values.testSink.verificationSecret.key }}
+                path: verification-key
+          # Control token (для управления режимами)
+          - secret:
+              name: {{ .Values.testSink.controlSecret.name }}
+              items:
+              - key: {{ .Values.testSink.controlSecret.key }}
+                path: control-token
+
+      # emptyDir: данные переживают restart контейнера, но НЕ замену Pod
+      - name: receipts
+        emptyDir:
+          sizeLimit: 10Mi
+
+      # Временная директория для Python
+      - name: tmp
+        emptyDir:
+          sizeLimit: 5Mi
+{{- end }}

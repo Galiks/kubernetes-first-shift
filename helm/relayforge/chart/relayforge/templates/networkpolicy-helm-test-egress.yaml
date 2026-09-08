@@ -1,0 +1,43 @@
+{{- if and .Values.networkPolicy.enabled .Values.testSink.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "relayforge.fullname" . }}-helm-test-egress
+  labels:
+    {{- include "relayforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: helm-test
+  policyTypes:
+  - Egress
+  egress:
+  # К API этого release
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: api
+    ports:
+    - port: 8080
+      protocol: TCP
+  # К test-sink этого release
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: test-sink
+    ports:
+    - port: 8080
+      protocol: TCP
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+{{- end }}

@@ -1,0 +1,30 @@
+# RelayForge Evidence Summary
+
+This file will be populated by running:
+
+    ./evidence/scripts/collect-summary.sh
+
+## Prerequisites
+
+Before running the summary collection:
+1. Install both releases: relay-a and relay-b
+2. Set environment variables:
+   - CLIENT_TOKEN_FILE - path to file with client token
+   - CONTROL_TOKEN_FILE - path to file with control token
+   - NAMESPACE - Kubernetes namespace (default: relayforge)
+   - BASE_URL - API base URL (default: http://localhost:8080)
+
+## What this file contains
+
+- Helm version and lint results
+- Rendered templates
+- Release status and values
+- Kubernetes resources (deploy, svc, pdb, job, pod)
+- RBAC verification (auth can-i)
+- NetworkPolicy connectivity matrix
+- verify.py results
+
+## Security
+
+All sensitive data (tokens, signatures, payloads) is automatically redacted
+by evidence/scripts/redact.sh before this file is finalized.

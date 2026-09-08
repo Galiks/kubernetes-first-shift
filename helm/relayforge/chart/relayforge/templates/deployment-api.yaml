@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "relayforge.fullname" . }}-api
+  labels:
+    {{- include "relayforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  progressDeadlineSeconds: 600
+  selector:
+    matchLabels:
+      {{- include "relayforge.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        {{- include "relayforge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+      annotations:
+        checksum/destinations: {{ include (print $.Template.BasePath "/configmap-destinations.yaml") . | sha256sum }}
+        checksum/secretRevision: {{ .Values.secretRevision | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "relayforge.fullname" . }}-api
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            {{- include "relayforge.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: api
+      containers:
+      - name: api
+        image: {{ include "relayforge.image" . }}
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "relayforge", "api"]
+        env:
+        - name: RELAYFORGE_RELEASE
+          value: {{ .Release.Name | quote }}
+        - name: RELAYFORGE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: RELAYFORGE_API_PORT
+          value: "8080"
+        - name: RELAYFORGE_IMAGE_REPOSITORY
+          value: {{ .Values.image.repository | quote }}
+        - name: RELAYFORGE_IMAGE_DIGEST
+          value: {{ .Values.image.digest | quote }}
+        - name: RELAYFORGE_SIGNING_SECRET_NAME
+          value: {{ .Values.worker.signingSecret.name | quote }}
+        - name: RELAYFORGE_SIGNING_SECRET_KEY
+          value: {{ .Values.worker.signingSecret.key | quote }}
+        - name: RELAYFORGE_WORKER_BACKOFF_LIMIT
+          value: {{ .Values.worker.backoffLimit | quote }}
+        - name: RELAYFORGE_WORKER_ACTIVE_DEADLINE
+          value: {{ .Values.worker.activeDeadlineSeconds | quote }}
+        - name: RELAYFORGE_WORKER_TTL
+          value: {{ .Values.worker.ttlSecondsAfterFinished | quote }}
+        - name: RELAYFORGE_WORKER_PERMANENT_EXIT_CODE
+          value: {{ .Values.worker.permanentExitCode | quote }}
+        - name: RELAYFORGE_SECRET_REVISION
+          value: {{ .Values.secretRevision | quote }}
+        - name: RELAYFORGE_API_BACKPRESSURE_MAX_ACTIVE
+          value: {{ .Values.api.backpressure.maxActiveJobs | quote }}
+        - name: RELAYFORGE_API_BACKPRESSURE_MAX_CONCURRENT
+          value: {{ .Values.api.backpressure.maxConcurrentCreate | quote }}
+        ports:
+        - name: http
+          containerPort: 8080
+        startupProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 2
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          periodSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.api.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/relayforge/config
+          readOnly: true
+        - name: secrets
+          mountPath: /etc/relayforge/secrets
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "relayforge.fullname" . }}-destinations
+      - name: secrets
+        secret:
+          secretName: {{ .Values.clientAuthSecret.name }}
+          items:
+          - key: {{ .Values.clientAuthSecret.key }}
+            path: client-token

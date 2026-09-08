@@ -1,0 +1,77 @@
+{{- if .Values.testSink.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "relayforge.fullname" . }}-helm-test
+  labels:
+    {{- include "relayforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: helm-test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 120
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      labels:
+        {{- include "relayforge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: helm-test
+    spec:
+      serviceAccountName: {{ include "relayforge.fullname" . }}-helm-test
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: helm-test
+        image: {{ include "relayforge.image" . }}
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "relayforge", "helm-test"]
+        env:
+        - name: RELAYFORGE_API_URL
+          value: "http://{{ include "relayforge.fullname" . }}-api:8080"
+        - name: RELAYFORGE_SINK_URL
+          value: "http://{{ include "relayforge.fullname" . }}-test-sink:8080"
+        - name: RELAYFORGE_DESTINATION
+          value: {{ first (keys .Values.destinations) | default "test" | quote }}
+        - name: RELAYFORGE_RELEASE
+          value: {{ .Release.Name | quote }}
+        - name: RELAYFORGE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: client-auth
+          mountPath: /etc/relayforge/secrets/client-token
+          subPath: client-token
+          readOnly: true
+        - name: control-token
+          mountPath: /etc/relayforge/secrets/control-token
+          subPath: control-token
+          readOnly: true
+      volumes:
+      - name: client-auth
+        secret:
+          secretName: {{ .Values.clientAuthSecret.name }}
+      - name: control-token
+        secret:
+          secretName: {{ .Values.testSink.controlSecret.name }}
+{{- end }}

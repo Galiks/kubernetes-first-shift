@@ -1,0 +1,26 @@
+# Сценарий 15: Drift и field ownership
+
+## Цель
+Server-side apply conflict и field ownership
+
+## Предусловия
+- release: relay-a
+- namespace: relayforge
+- profile: dev
+
+## Шаги воспроизведения
+1. Запусти `./run.sh`
+2. Проверь результаты в артефактах
+
+## Ожидаемый результат
+- <критерий 1>
+- <критерий 2>
+
+## Наблюдаемый результат
+- <факт 1> (см. артефакты)
+
+## Вывод
+PASS/FAIL
+
+## Связь с заданием
+См. RELAYFORGE_TASK.md, раздел "Сценарии".
