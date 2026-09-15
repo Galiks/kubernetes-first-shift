@@ -1,0 +1,10 @@
+Прогноз effective values для relay-a (values.yaml + values-relay-a.yaml + CLI):
+  api.replicas=1 (default values.yaml)
+  api.port=8080 (default values.yaml)
+  api.backpressure.maxActiveJobs=12 (CLI --set)
+  worker.ttlSecondsAfterFinished=600 (default values.yaml)
+  image.repository=relayforge-registry:5050/relayforge (CLI --set)
+  image.digest=sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0 (CLI --set)
+  clientAuthSecret.name=relay-a-client-auth (values-relay-a.yaml)
+  destinations.test.url=http://relay-a-relayforge-test-sink:8080 (values-relay-a.yaml)
+  secretRevision='001' (CLI --set-string: строковое 'число')

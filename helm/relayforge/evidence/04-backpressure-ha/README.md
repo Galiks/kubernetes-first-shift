@@ -1,26 +1,32 @@
-# Сценарий 04: Backpressure в HA
+# Сценарий 04: backpressure ha
 
 ## Цель
-Измерить возможное превышение мягкого лимита в HA-профиле
+См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
 
 ## Предусловия
-- release: relay-a
-- namespace: relayforge
-- profile: dev
+- k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
+- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения
-1. Запусти `./run.sh`
-2. Проверь результаты в артефактах
+1. `bash run.sh` (переменные RELEASE/API_PORT/SINK_PORT, KUBECONFIG)
 
 ## Ожидаемый результат
-- <критерий 1>
-- <критерий 2>
+- критерии в комментариях run.sh и в RUNBOOK.md
 
 ## Наблюдаемый результат
-- <факт 1> (см. артефакты)
+- limit_per_pod=2 api_replicas=2 burst=8
+  accepted=4 rejected=4 per_pod=[2, 2]
+  observed_overshoot=2 (сверх предела одного Pod)
+  upper_bound=4
+  алгоритм: каждый Pod проверяет и резервирует место атомарно
+  локально (JobRegistry.try_reserve); меж-Pod координации нет,
+  поэтому верхняя граница суммарного принятия = limit * replicas;
+  строгая глобальная координация потребовала бы lease/распределённого
+  счётчика (цена: ещё один write-объект на доставку + availability)
 
 ## Вывод
-PASS/FAIL
+PASS
 
 ## Связь с заданием
-См. RELAYFORGE_TASK.md, раздел "Сценарии".
+См. RELAYFORGE_TASK.md, раздел «Сценарии».

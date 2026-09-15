@@ -1,1 +1,4 @@
 relayforge_hernay
+.memsearch.toml
+helm/:memory:.ses
+helm/.memsearch

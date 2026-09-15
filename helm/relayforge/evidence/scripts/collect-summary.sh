@@ -24,10 +24,28 @@ echo "=== helm lint --strict ==="
 helm lint chart/relayforge --strict 2>&1 || true
 echo ""
 
-echo "=== helm template (relay-a, profile: dev) ==="
+echo "=== helm template (relay-a: values.yaml + values-relay-a.yaml + CLI overrides) ==="
 helm template "$RELEASE_A" chart/relayforge \
   -f chart/relayforge/values.yaml \
-  -f chart/relayforge/values-dev.yaml 2>&1 | head -100 || true
+  -f chart/relayforge/values-relay-a.yaml \
+  --set image.digest="${IMAGE_DIGEST:-}" \
+  --set api.replicas=1 \
+  --set-string secretRevision=001 2>&1 | head -80 || true
+echo ""
+
+echo "=== helm template (both releases: dev и relay-b) ==="
+helm template "$RELEASE_B" chart/relayforge \
+  -f chart/relayforge/values.yaml \
+  -f chart/relayforge/values-relay-b.yaml \
+  --set image.digest="${IMAGE_DIGEST:-}" 2>&1 | head -40 || true
+echo ""
+
+echo "=== server dry-run (template -> kubectl apply --dry-run=server) ==="
+helm template "$RELEASE_A" chart/relayforge \
+  -f chart/relayforge/values.yaml \
+  -f chart/relayforge/values-relay-a.yaml \
+  --set image.digest="${IMAGE_DIGEST:-}" 2>/dev/null \
+  | kubectl apply --dry-run=server -f - 2>&1 | head -20 || true
 echo ""
 
 echo "=== helm status $RELEASE_A ==="
@@ -93,10 +111,13 @@ echo ""
 
 echo "=== verify.py ==="
 if [ -n "${CLIENT_TOKEN_FILE:-}" ] && [ -n "${CONTROL_TOKEN_FILE:-}" ]; then
-    python scripts/verify.py \
+    "${VERIFY_PY:-python}" scripts/verify.py \
       --base-url "${BASE_URL:-http://localhost:8080}" \
       --release "$RELEASE_A" \
-      --namespace "$NAMESPACE" 2>&1 || true
+      --namespace "$NAMESPACE" \
+      ${SINK_URL:+--sink-url "$SINK_URL"} \
+      ${MAX_ACTIVE_JOBS:+--max-active-jobs "$MAX_ACTIVE_JOBS"} \
+      ${TTL_TIMEOUT:+--ttl-timeout "$TTL_TIMEOUT"} 2>&1 || true
 else
     echo "CLIENT_TOKEN_FILE and CONTROL_TOKEN_FILE not set, skipping verify.py"
 fi
@@ -111,4 +132,4 @@ echo "==================================================================="
 echo "✓ Summary collected in $OUTPUT"
 echo ""
 echo "Running redaction..."
-./evidence/scripts/redact.sh "$OUTPUT"
+./evidence/scripts/redact.sh "evidence/"

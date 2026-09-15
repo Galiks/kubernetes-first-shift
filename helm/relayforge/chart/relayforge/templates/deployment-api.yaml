@@ -55,7 +55,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RELAYFORGE_API_PORT
-          value: "8080"
+          value: {{ .Values.api.port | quote }}
         - name: RELAYFORGE_IMAGE_REPOSITORY
           value: {{ .Values.image.repository | quote }}
         - name: RELAYFORGE_IMAGE_DIGEST
@@ -64,6 +64,8 @@ spec:
           value: {{ .Values.worker.signingSecret.name | quote }}
         - name: RELAYFORGE_SIGNING_SECRET_KEY
           value: {{ .Values.worker.signingSecret.key | quote }}
+        - name: RELAYFORGE_WORKER_SERVICE_ACCOUNT
+          value: {{ include "relayforge.fullname" . }}-worker
         - name: RELAYFORGE_WORKER_BACKOFF_LIMIT
           value: {{ .Values.worker.backoffLimit | quote }}
         - name: RELAYFORGE_WORKER_ACTIVE_DEADLINE
@@ -78,9 +80,15 @@ spec:
           value: {{ .Values.api.backpressure.maxActiveJobs | quote }}
         - name: RELAYFORGE_API_BACKPRESSURE_MAX_CONCURRENT
           value: {{ .Values.api.backpressure.maxConcurrentCreate | quote }}
+        - name: RELAYFORGE_TEST_FAULT_CREATE_TIMEOUT
+          value: {{ .Values.api.testFaultCreateTimeout | quote }}
+        {{- if .Values.testSink.enabled }}
+        - name: RELAYFORGE_SINK_URL
+          value: "http://{{ include "relayforge.fullname" . }}-test-sink:{{ .Values.testSink.port }}"
+        {{- end }}
         ports:
         - name: http
-          containerPort: 8080
+          containerPort: {{ .Values.api.port }}
         startupProbe:
           httpGet:
             path: /livez
@@ -113,6 +121,11 @@ spec:
         - name: secrets
           mountPath: /etc/relayforge/secrets
           readOnly: true
+        {{- if .Values.testSink.enabled }}
+        - name: control-token
+          mountPath: /etc/relayforge/secrets-control
+          readOnly: true
+        {{- end }}
       volumes:
       - name: config
         configMap:
@@ -123,3 +136,12 @@ spec:
           items:
           - key: {{ .Values.clientAuthSecret.key }}
             path: client-token
+      {{- if .Values.testSink.enabled }}
+      # Control-token для UI: управление тестовым приёмником (только testSink).
+      - name: control-token
+        secret:
+          secretName: {{ .Values.testSink.controlSecret.name }}
+          items:
+          - key: {{ .Values.testSink.controlSecret.key }}
+            path: control-token
+      {{- end }}

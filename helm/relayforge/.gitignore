@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.uv-cache/
+.helm-xdg-cache/
+*.egg-info/
+
+# Helm
+.helm-charts/
+chart/relayforge/*.tgz
+
+# Локальные артефакты сборки/секреты (cluster/sercret_create.sh пишет токены на диск;
+# kubeconfig.yaml — локальный kubeconfig для k3d, в Git не попадает)
+cluster/image-digest.txt
+cluster/*-token.txt
+cluster/kubeconfig.yaml
+
+# Локальные временные файлы
+*.tmp

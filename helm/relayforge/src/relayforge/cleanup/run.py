@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 async def run() -> None:
     setup_logging()
-    await config.load_incluster_config()
+    config.load_incluster_config()  # синхронная функция
     apps = client.AppsV1Api()
     batch = client.BatchV1Api()
 

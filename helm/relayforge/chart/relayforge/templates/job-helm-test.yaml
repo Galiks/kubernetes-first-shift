@@ -39,7 +39,7 @@ spec:
         - name: RELAYFORGE_SINK_URL
           value: "http://{{ include "relayforge.fullname" . }}-test-sink:8080"
         - name: RELAYFORGE_DESTINATION
-          value: {{ first (keys .Values.destinations) | default "test" | quote }}
+          value: {{ first (keys (.Values.destinations | default (dict "test" ""))) | quote }}
         - name: RELAYFORGE_RELEASE
           value: {{ .Release.Name | quote }}
         - name: RELAYFORGE_NAMESPACE

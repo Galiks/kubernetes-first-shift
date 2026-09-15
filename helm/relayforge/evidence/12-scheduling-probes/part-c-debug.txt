@@ -1,0 +1,5 @@
+Defaulting debug container name to debugger-tq9vs.
+Warning: Non-root user is configured for the entire target Pod, and some capabilities granted by debug profile may not work. Please consider using "--custom" with a custom profile that specifies "securityContext.runAsUser: 0".
+DNS relay-a svc: 10.43.224.226
+DNS kubernetes: 10.43.0.1
+livez loopback: 200

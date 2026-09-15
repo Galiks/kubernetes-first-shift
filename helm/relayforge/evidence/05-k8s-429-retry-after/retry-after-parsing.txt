@@ -1,0 +1,4 @@
+OK retry-after=5 -> 5.0: got=5.0
+OK retry-after=0 -> не меньше 0.5: got=0.5
+OK retry-after=3600 -> не больше 30: got=30.0
+OK нет заголовка -> 5.0: got=5.0

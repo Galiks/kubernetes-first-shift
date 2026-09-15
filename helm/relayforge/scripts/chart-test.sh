@@ -24,7 +24,9 @@ fi
 echo "=== checksum changes on destinations ==="
 helm template relay-test chart/relayforge --set destinations.a.url=http://a --set image.digest=sha256:$(printf '%064d' 1) > /tmp/r1.yaml
 helm template relay-test chart/relayforge --set destinations.a.url=http://b --set image.digest=sha256:$(printf '%064d' 1) > /tmp/r2.yaml
-if ! diff /tmp/r1.yaml /tmp/r2.yaml | grep -q checksum; then
+# diff возвращает 1 при различиях; pipefail не должен ломать проверку.
+diff /tmp/r1.yaml /tmp/r2.yaml > /tmp/rendered-diff.txt || true
+if ! grep -q "checksum" /tmp/rendered-diff.txt; then
   echo "FAIL: checksum should change"
   exit 1
 fi

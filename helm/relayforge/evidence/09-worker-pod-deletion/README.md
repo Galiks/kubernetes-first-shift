@@ -1,26 +1,30 @@
-# Сценарий 09: Удаление worker Pod
+# Сценарий 09: worker pod deletion
 
 ## Цель
-Удалить worker Pod во время slow → Job controller продолжает
+См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
 
 ## Предусловия
-- release: relay-a
-- namespace: relayforge
-- profile: dev
+- k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
+- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения
-1. Запусти `./run.sh`
-2. Проверь результаты в артефактах
+1. `bash run.sh` (переменные RELEASE/API_PORT/SINK_PORT, KUBECONFIG)
 
 ## Ожидаемый результат
-- <критерий 1>
-- <критерий 2>
+- критерии в комментариях run.sh и в RUNBOOK.md
 
 ## Наблюдаемый результат
-- <факт 1> (см. артефакты)
+- worker_pod_deleted=relay-t-814eb640d46fb34a100de492a1b3b9572e4595125d2ea1a2cfgzf9n
+  final_status=succeeded api_attempts(текущие pods)=1
+  job_attempts_total(failed+succeeded)=2
+  Job controller создал новую попытку после удаления Pod;
+  логи первого Pod могли быть потеряны вместе с ним — для гарантированного
+  сохранения потребовалось бы централизованное решение (e.g. Fluent Bit/
+  vector на узлах + object storage/elastic, или streaming-коллектор с буфером)
 
 ## Вывод
-PASS/FAIL
+PASS
 
 ## Связь с заданием
-См. RELAYFORGE_TASK.md, раздел "Сценарии".
+См. RELAYFORGE_TASK.md, раздел «Сценарии».

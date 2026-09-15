@@ -14,7 +14,13 @@ spec:
   policyTypes:
   - Ingress
   ingress:
-  - ports:
-    - port: 8080
+  # Только helm-test этого release; неизвестные client-поды и другой release не проходят.
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: helm-test
+    ports:
+    - port: {{ .Values.api.port }}
       protocol: TCP
 {{- end }}

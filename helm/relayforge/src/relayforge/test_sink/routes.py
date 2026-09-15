@@ -1,11 +1,17 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 
-from relayforge.test_sink.app import state
-from relayforge.test_sink.verifier import verify_request
 from relayforge.api.errors import ApiError
+from relayforge.test_sink.state import state
+from relayforge.test_sink.verifier import verify_request
 
 router = APIRouter()
+
+
+@router.get("/livez")
+async def livez():
+    # Probe для test-sink: только проверка HTTP-процесса.
+    return {"status": "ok"}
 
 
 @router.post("/events")
@@ -13,7 +19,9 @@ async def events(request: Request):
     body = await request.body()
     delivery_id = verify_request(request.headers, body, state.verification_key)
 
-    state.attempts[delivery_id] = state.attempts.get(delivery_id, 0) + 1
+    # HTTP-попытки считаются отдельно от применённых событий и персистятся
+    # на emptyDir: счётчик переживает restart контейнера (сценарий 07/10).
+    attempts = state.receipts.record_attempt(delivery_id)
     action = state.modes.check_mode(delivery_id)
 
     if action == "reject":
@@ -22,27 +30,25 @@ async def events(request: Request):
         import asyncio
         await asyncio.sleep(30)
     if action == "drop":
-        # accept-and-drop: применяем, но закрываем соединение
-        if delivery_id not in state.applied:
-            state.applied.add(delivery_id)
-            state.receipts.save(delivery_id)
+        # accept-and-drop: применяем, но закрываем соединение без ответа
+        state.receipts.apply(delivery_id)
         import os
         os._exit(1)  # имитация обрыва
     if action == "fail":
         return Response(status_code=503)
 
-    if delivery_id in state.applied:
+    if state.receipts.is_applied(delivery_id):
+        # Уже применённое событие: 204, повторно не применяем.
         return Response(status_code=204)
-    state.applied.add(delivery_id)
-    state.receipts.save(delivery_id)
+    state.receipts.apply(delivery_id)
     return Response(status_code=204)
 
 
 @router.get("/received/{delivery_id}")
 async def received(delivery_id: str):
     return {
-        "applied": delivery_id in state.applied,
-        "attempts": state.attempts.get(delivery_id, 0),
+        "applied": state.receipts.is_applied(delivery_id),
+        "attempts": state.receipts.attempts(delivery_id),
     }
 
 
@@ -53,6 +59,16 @@ async def _verify_control(request: Request):
     import hmac
     if not hmac.compare_digest(auth[7:].encode("utf-8"), state.control_token):
         raise ApiError(401, "UNAUTHORIZED", "invalid control token")
+
+
+@router.get("/control/state")
+async def control_state(request: Request):
+    await _verify_control(request)
+    return {
+        "mode": state.modes.mode,
+        "fail_first_n": state.modes.fail_first_n,
+        "receipts_count": state.receipts.count(),
+    }
 
 
 @router.post("/control/mode")
@@ -66,8 +82,6 @@ async def set_mode(request: Request):
 @router.post("/control/reset")
 async def reset(request: Request):
     await _verify_control(request)
-    state.attempts.clear()
-    state.applied.clear()
     state.receipts.clear()
     state.modes.reset()
     return {"status": "ok"}

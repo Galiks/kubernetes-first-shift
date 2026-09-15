@@ -1,28 +1,31 @@
-import sys
 import asyncio
+import importlib
+import sys
 
-async def run_api(): print("API mode stub")
-async def run_worker(): print("Worker mode stub")
-async def run_test_sink(): print("Test-sink mode stub")
-async def run_helm_test(): print("Helm-test mode stub")
-async def run_cleanup(): print("Cleanup mode stub")
-
+# Один application image, пять режимов. Функции могут быть sync или async.
 MODES = {
-    "api": run_api,
-    "worker": run_worker,
-    "test-sink": run_test_sink,
-    "helm-test": run_helm_test,
-    "cleanup": run_cleanup,
+    "api": ("relayforge.api.app", "main"),
+    "worker": ("relayforge.worker.run", "run"),
+    "test-sink": ("relayforge.test_sink.app", "main"),
+    "helm-test": ("relayforge.helm_test.run", "run"),
+    "cleanup": ("relayforge.cleanup.run", "run"),
 }
 
-def main():
+
+def main() -> None:
     if len(sys.argv) < 2 or sys.argv[1] not in MODES:
         print(f"Usage: python -m relayforge <{'|'.join(MODES)}>", file=sys.stderr)
         sys.exit(2)
-    
+
     mode = sys.argv[1]
-    print(f"Starting RelayForge in '{mode}' mode...")
-    asyncio.run(MODES[mode]())
+    module_name, func_name = MODES[mode]
+    module = importlib.import_module(module_name)
+    fn = getattr(module, func_name)
+
+    result = fn()
+    if asyncio.iscoroutine(result):
+        asyncio.run(result)
+
 
 if __name__ == "__main__":
     main()

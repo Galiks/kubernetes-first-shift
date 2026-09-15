@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
+# Создаёт заранее созданные Secret'ы для одного или нескольких release-префиксов:
+#   ${prefix}-client-auth   -> key: client-token
+#   ${prefix}-signing       -> key: signing-key
+#   ${prefix}-verification  -> keys: verification-key (== signing-key), control-token
+# Токены для verify.py записываются в файлы <prefix>-client-token.txt и
+# <prefix>-control-token.txt в текущем каталоге (пути — в .gitignore).
+#
+# Использование: sercret_create.sh [namespace] [prefix...]
+#   по умолчанию: relayforge relay-a relay-b
 set -euo pipefail
 
 NS="${1:-relayforge}"
+PREFIXES=("${@:2}")
+if [ ${#PREFIXES[@]} -eq 0 ]; then
+  PREFIXES=(relay-a relay-b)
+fi
+
 kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
 
 create_secrets() {
@@ -12,20 +26,22 @@ create_secrets() {
   control_token=$(openssl rand -hex 32)
 
   kubectl -n "$NS" create secret generic "${prefix}-client-auth" \
-    --from-literal=client-token="$client_token" --dry-run=client -o yaml | kubectl apply -f -
+    --from-literal=client-token="$client_token" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
 
   kubectl -n "$NS" create secret generic "${prefix}-signing" \
-    --from-literal=signing-key="$signing_key" --dry-run=client -o yaml | kubectl apply -f -
+    --from-literal=signing-key="$signing_key" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
 
   kubectl -n "$NS" create secret generic "${prefix}-verification" \
     --from-literal=verification-key="$signing_key" \
-    --from-literal=control-token="$control_token" --dry-run=client -o yaml | kubectl apply -f -
+    --from-literal=control-token="$control_token" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
 
-  echo "# ${prefix} tokens (сохрани для verify.py):"
-  echo "export ${prefix^^}_CLIENT_TOKEN_FILE=$(mktemp)"
-  echo "$client_token" > "${prefix}-client-token.txt"
-  echo "$control_token" > "${prefix}-control-token.txt"
+  printf '%s\n' "$client_token" > "${prefix}-client-token.txt"
+  printf '%s\n' "$control_token" > "${prefix}-control-token.txt"
+  echo "# ${prefix}: токены записаны в файлы:"
+  echo "  CLIENT_TOKEN_FILE=${prefix}-client-token.txt"
+  echo "  CONTROL_TOKEN_FILE=${prefix}-control-token.txt"
 }
 
-create_secrets "relay-a"
-create_secrets "relay-b"
+for p in "${PREFIXES[@]}"; do
+  create_secrets "$p"
+done

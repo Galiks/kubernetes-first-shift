@@ -14,7 +14,7 @@ spec:
     app.kubernetes.io/component: test-sink
   ports:
   - name: http
-    port: 8080
+    port: {{ .Values.testSink.port }}
     targetPort: http
     protocol: TCP
 {{- end }}

@@ -2,7 +2,7 @@ import re
 
 from fastapi import Request
 
-from relayforge.api.app import state
+from relayforge.api.state import state
 from relayforge.api.errors import ApiError
 from relayforge.canonical import strict_json_loads
 

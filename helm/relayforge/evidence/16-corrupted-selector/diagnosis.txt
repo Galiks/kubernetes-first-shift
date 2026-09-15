@@ -1,0 +1,3 @@
+endpoints_empty=true
+pods_alive_and_labeled=true (broken=yes не совпадает)
+livez_through_service!=200

@@ -6,30 +6,131 @@
   "properties": {
     "image": {
       "type": "object",
-      "required": ["digest"],
+      "required": ["repository", "digest"],
+      "additionalProperties": false,
       "properties": {
         "repository": {"type": "string", "minLength": 1},
-        "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+        "digest": {"type": "string", "pattern": "^$|^sha256:[a-f0-9]{64}$"}
       }
     },
     "api": {
       "type": "object",
+      "required": ["replicas", "port"],
+      "additionalProperties": false,
       "properties": {
-        "replicas": {"type": "integer", "minimum": 1}
+        "replicas": {"type": "integer", "minimum": 1},
+        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "testFaultCreateTimeout": {"type": "boolean"},
+        "resources": {"type": "object"},
+        "backpressure": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxActiveJobs": {"type": "integer", "minimum": 1},
+            "maxConcurrentCreate": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "worker": {
+      "type": "object",
+      "required": ["signingSecret"],
+      "additionalProperties": false,
+      "properties": {
+        "backoffLimit": {"type": "integer", "minimum": 0, "maximum": 20},
+        "activeDeadlineSeconds": {"type": "integer", "minimum": 1, "maximum": 86400},
+        "ttlSecondsAfterFinished": {"type": "integer", "minimum": 0, "maximum": 604800},
+        "permanentExitCode": {"type": "integer", "minimum": 1, "maximum": 255},
+        "resources": {"type": "object"},
+        "signingSecret": {
+          "type": "object",
+          "required": ["name", "key"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "key": {"type": "string", "minLength": 1}
+          }
+        }
       }
     },
     "testSink": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "enabled": {"type": "boolean"}
+        "enabled": {"type": "boolean"},
+        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "resources": {"type": "object"},
+        "verificationSecret": {
+          "type": "object",
+          "required": ["name", "key"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "key": {"type": "string", "minLength": 1}
+          }
+        },
+        "controlSecret": {
+          "type": "object",
+          "required": ["name", "key"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "key": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "clientAuthSecret": {
+      "type": "object",
+      "required": ["name", "key"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "key": {"type": "string", "minLength": 1}
+      }
+    },
+    "destinations": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["url"],
+        "additionalProperties": false,
+        "properties": {
+          "url": {"type": "string", "pattern": "^https?://", "minLength": 5}
+        }
+      }
+    },
+    "secretRevision": {"type": "string", "minLength": 1},
+    "networkPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "kubernetesApiCidr": {"type": "string", "pattern": "^[0-9.]+/[0-9]+$"},
+        "externalDestinationCidrs": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[0-9.]+/[0-9]+$"}
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activeDeadlineSeconds": {"type": "integer", "minimum": 1, "maximum": 3600}
+      }
+    },
+    "nameOverride": {"type": "string"},
+    "fullnameOverride": {"type": "string"}
+  },
+  "if": {
+    "properties": {
+      "testSink": {
+        "properties": {"enabled": {"const": true}}
       }
     }
   },
-  "if": {
-    "properties": {"testSink": {"properties": {"enabled": {"const": true}}}}
-  },
   "then": {
-    "required": ["testSink"],
     "properties": {
       "testSink": {
         "required": ["verificationSecret", "controlSecret"]

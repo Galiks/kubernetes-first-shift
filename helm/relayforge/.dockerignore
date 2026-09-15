@@ -4,3 +4,7 @@ __pycache__
 .git
 evidence/
 tests/
+.uv-cache
+.pytest_cache
+.helm-charts
+cluster/*-token.txt

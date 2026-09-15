@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "relayforge"
 version = "0.1.0"
@@ -6,12 +10,25 @@ dependencies = [
   "fastapi==0.115.0",
   "uvicorn[standard]==0.30.6",
   "httpx==0.27.2",
-  "kubernetes-asyncio>=31.0.0",
+  "kubernetes-asyncio==36.1.0",
   "prometheus-client==0.21.0",
   "pydantic==2.9.2",
   "orjson==3.10.7",
   "cryptography==43.0.1",
 ]
 
+[project.optional-dependencies]
+test = [
+  "pytest==8.3.4",
+]
+
 [project.scripts]
 relayforge = "relayforge.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+# Тесты в репозитории названы по схеме `*-test.py`.
+python_files = ["*-test.py", "test_*.py", "*_test.py"]
+testpaths = ["tests"]

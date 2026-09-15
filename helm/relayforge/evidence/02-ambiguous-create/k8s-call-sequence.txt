@@ -1,0 +1,4 @@
+Kubernetes client call order (test profile, fault injection):
+1) create_namespaced_job  -> API server принял Job
+2) fault injection        -> клиент увидел 503 CREATE_AMBIGUOUS
+3) повторный запрос       -> create (409 AlreadyExists) -> read_namespaced_job

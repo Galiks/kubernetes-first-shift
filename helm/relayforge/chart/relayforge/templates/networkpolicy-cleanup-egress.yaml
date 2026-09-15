@@ -14,12 +14,15 @@ spec:
   policyTypes:
   - Egress
   egress:
-  # Kubernetes API
+  # Kubernetes API: egress-правила применяются к трафику ПОСЛЕ DNAT сервиса,
+  # поэтому порт endpoint (6443 для k3s) разрешается вместе с портом сервиса.
   - to:
     - ipBlock:
         cidr: {{ .Values.networkPolicy.kubernetesApiCidr }}
     ports:
     - port: 443
+      protocol: TCP
+    - port: 6443
       protocol: TCP
   # DNS
   - to:

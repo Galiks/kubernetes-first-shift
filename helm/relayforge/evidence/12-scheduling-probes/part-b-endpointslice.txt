@@ -1,0 +1,1 @@
+[{"addresses":["10.42.0.109"],"conditions":{"ready":false,"serving":false,"terminating":false},"nodeName":"k3d-relayforge-server-0","targetRef":{"kind":"Pod","name":"relay-t-relayforge-api-794f85c8b9-fttzp","namespace":"relayforge","uid":"3f4dd4e7-b5b8-46fa-9cf2-dd5f75c680a7"}}]

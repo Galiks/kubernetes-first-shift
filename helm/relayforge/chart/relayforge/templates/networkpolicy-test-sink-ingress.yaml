@@ -32,4 +32,13 @@ spec:
     ports:
     - port: 8080
       protocol: TCP
+  # От api этого release (UI: sink state/mode/reset, тестовый прогон)
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: api
+    ports:
+    - port: 8080
+      protocol: TCP
 {{- end }}

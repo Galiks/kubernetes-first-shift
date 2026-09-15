@@ -1,0 +1,6 @@
+limit=2 burst=5
+accepted=2 rejected=1 active_jobs=2
+retry_after=['5']
+new_delivery_jobs=2
+подсчёт: namespace-scoped watch (JobRegistry), cluster-wide list не используется;
+превышение мягкого лимита возможно только из-за лага watch и ограничено

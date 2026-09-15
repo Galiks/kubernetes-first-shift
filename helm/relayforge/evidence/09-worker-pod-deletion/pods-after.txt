@@ -1,0 +1,2 @@
+NAME                                                              READY   STATUS      RESTARTS   AGE   IP            NODE                     NOMINATED NODE   READINESS GATES
+relay-t-814eb640d46fb34a100de492a1b3b9572e4595125d2ea1a2cfmz7j9   0/1     Completed   0          10s   10.42.1.120   k3d-relayforge-agent-0   <none>           <none>

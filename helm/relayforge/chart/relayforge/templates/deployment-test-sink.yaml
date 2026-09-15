@@ -53,13 +53,13 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RELAYFORGE_TEST_SINK_PORT
-          value: "8080"
+          value: {{ .Values.testSink.port | quote }}
         - name: RELAYFORGE_RECEIPTS_DIR
           value: "/var/lib/relayforge-test-sink/receipts"
 
         ports:
         - name: http
-          containerPort: 8080
+          containerPort: {{ .Values.testSink.port }}
           protocol: TCP
 
         # Probes

@@ -14,12 +14,15 @@ spec:
   policyTypes:
   - Egress
   egress:
-  # Kubernetes API
+  # Kubernetes API: egress-правила применяются к трафику ПОСЛЕ DNAT сервиса,
+  # поэтому порт endpoint (6443 для k3s) разрешается вместе с портом сервиса.
   - to:
     - ipBlock:
         cidr: {{ .Values.networkPolicy.kubernetesApiCidr }}
     ports:
     - port: 443
+      protocol: TCP
+    - port: 6443
       protocol: TCP
   # DNS
   - to:
@@ -29,4 +32,15 @@ spec:
       protocol: UDP
     - port: 53
       protocol: TCP
+  {{- if .Values.testSink.enabled }}
+  # In-cluster приёмник (UI: состояние и тесты)
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: test-sink
+    ports:
+    - port: {{ .Values.testSink.port }}
+      protocol: TCP
+  {{- end }}
 {{- end }}

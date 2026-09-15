@@ -14,7 +14,7 @@ spec:
   policyTypes:
   - Egress
   egress:
-  # In-cluster test-sink (если включён)
+  # In-cluster destination (если включён в конфигурации release)
   {{- if .Values.testSink.enabled }}
   - to:
     - podSelector:

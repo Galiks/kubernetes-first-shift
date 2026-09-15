@@ -3,7 +3,7 @@ import hmac
 from fastapi import Request
 
 from relayforge.api.errors import ApiError
-from relayforge.api.app import state
+from relayforge.api.state import state
 
 
 async def verify_token(request: Request) -> None:

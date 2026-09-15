@@ -17,4 +17,4 @@ testSink:
 
 destinations:
   test:
-    url: "http://{{ .Release.Name }}-relayforge-test-sink:8080"
+    url: "http://relay-a-relayforge-test-sink:8080"

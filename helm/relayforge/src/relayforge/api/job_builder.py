@@ -31,6 +31,7 @@ def build_job(
     signing_secret_name: str,
     signing_secret_key: str,
     destinations_configmap: str,
+    worker_service_account: str,
     backoff_limit: int,
     active_deadline: int,
     ttl_after_finished: int,
@@ -87,7 +88,7 @@ def build_job(
                     },
                 ),
                 spec=k8s.V1PodSpec(
-                    service_account_name=f"{release}-worker",
+                    service_account_name=worker_service_account,
                     automount_service_account_token=False,
                     restart_policy="Never",
                     security_context=k8s.V1PodSecurityContext(
