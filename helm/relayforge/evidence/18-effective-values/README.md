@@ -1,11 +1,14 @@
 # Сценарий 18: effective values
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+Прогноз (values.yaml + values-relay-a.yaml + `--set replicas=2 --set-string
+secretRevision=042`) → `helm template` (replicas=2, checksum secretRevision),
+`helm get values -a` (все 9 пунктов совпали), живой Deployment (replicas=2);
+в конце release возвращён к штатным values.
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

@@ -1,11 +1,15 @@
 # Сценарий 10: emptydir boundary
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+Доставка применена; PID 1 test-sink завершён через `kubectl exec`
+(`os.kill(1, SIGTERM)`) → restart контейнера: Pod UID тот же, restartCount +1,
+receipt жив; затем `kubectl delete pod` → новый UID, receipt исчез.
+(Примечание: SIGKILL к init через exec в k3s/containerd игнорируется —
+используется SIGTERM, штатный graceful shutdown uvicorn.)
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

@@ -1,11 +1,13 @@
 # Сценарий 11: two releases
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+Одинаковый Idempotency-Key в relay-a и relay-b → разные delivery ID и разные Jobs
+(по одному на release). `helm uninstall relay-a` → cleanup hook удаляет Jobs relay-a;
+relay-b продолжает работать (повтор ключа → тот же ID). В конце relay-a восстановлен.
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

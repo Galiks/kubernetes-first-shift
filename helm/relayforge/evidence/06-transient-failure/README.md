@@ -1,11 +1,12 @@
 # Сценарий 06: transient failure
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+sink `fail-first(2)`: 503, 503, 204 → доставка `succeeded`; sink: 3 HTTP-попытки,
+1 применение; API: attempts=3 (число запусков worker, не из логов).
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

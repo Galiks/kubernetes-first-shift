@@ -1,11 +1,14 @@
 # Сценарий 02: ambiguous create
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+Test profile: `--set api.testFaultCreateTimeout=true` (одноразовая fault injection на
+границе k8s-клиента: API server принял Job, клиент видит 503 `CREATE_AMBIGUOUS`).
+Первый POST → 503; повтор → 200 с тем же delivery ID; Job один (порядок вызовов
+k8s-клиента зафиксирован: `create → (fault) → create(409) → read`).
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

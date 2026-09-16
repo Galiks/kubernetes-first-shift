@@ -1,11 +1,15 @@
 # Сценарий 13: values rollback
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+Upgrade меняет `api.backpressure.maxActiveJobs` 10→12 (+ `--set-string
+secretRevision=001`) → прогноз effective values совпал с `helm get values -a`;
+`helm rollback` к прежней revision → maxActiveJobs=10, в `helm history` новая
+revision «Rollback to N». Rollback не отменяет выполненные HTTP-вызовы и не трогает
+динамические Jobs.
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

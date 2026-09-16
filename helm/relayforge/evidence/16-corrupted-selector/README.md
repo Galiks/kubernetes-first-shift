@@ -1,11 +1,14 @@
 # Сценарий 16: corrupted selector
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+Service API удалён и пересоздан с «битым» селектором (`broken=yes`): endpoints
+пусты, свежие соединения через Service не проходят (000), поды живы и доступны
+напрямую; диагностика — Service/EndpointSlice/labels; восстановление через
+`helm upgrade --force-conflicts` → selector корректен, endpoints вернулись, livez 200.
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

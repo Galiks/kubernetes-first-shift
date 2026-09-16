@@ -1,11 +1,12 @@
 # Сценарий 04: backpressure ha
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+2 API-реплики, лимит 2/под: burst 8 → суммарно принято 4 (per-pod [2,2]) — превышение
+относительно одной реплики = 2, верхняя граница алгоритма = limit × replicas = 4.
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

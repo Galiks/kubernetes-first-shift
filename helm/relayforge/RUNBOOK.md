@@ -11,7 +11,7 @@ bash scripts/install.sh relay-a relayforge    # helm upgrade --install, --wait=w
                                               # --server-side=true, digest из image-digest.txt
 ```
 Предусловия: образ и chart опубликованы в локальный OCI registry (`make build publish`),
-секреты созданы (`bash cluster/sercret_create.sh relayforge <prefix...>`), digest
+секреты созданы (`bash cluster/secret_create.sh relayforge <prefix...>`), digest
 записан в `cluster/image-digest.txt`.
 
 ### Тест

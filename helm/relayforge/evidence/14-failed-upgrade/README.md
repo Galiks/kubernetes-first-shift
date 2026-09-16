@@ -1,11 +1,13 @@
 # Сценарий 14: failed upgrade
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+Несуществующий digest + `--wait=watcher --rollback-on-failure` → upgrade failed и
+rollback; старые API Pods продолжали отвечать (livez 200, POST 202); digest в
+Deployment не битый; сохранены status/history/ReplicaSets/Events до/после.
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

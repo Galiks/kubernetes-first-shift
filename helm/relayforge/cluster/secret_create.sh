@@ -6,7 +6,7 @@
 # Токены для verify.py записываются в файлы <prefix>-client-token.txt и
 # <prefix>-control-token.txt в текущем каталоге (пути — в .gitignore).
 #
-# Использование: sercret_create.sh [namespace] [prefix...]
+# Использование: secret_create.sh [namespace] [prefix...]
 #   по умолчанию: relayforge relay-a relay-b
 set -euo pipefail
 

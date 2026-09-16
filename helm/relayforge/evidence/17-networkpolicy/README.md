@@ -1,11 +1,18 @@
 # Сценарий 17: networkpolicy
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+```bash
+bash evidence/17-networkpolicy/run.sh   # → connectivity-matrix.txt
+```
+helm-test(relay-a) → API(relay-a): REACHED; неизвестный client → API: BLOCKED;
+worker(relay-b) → test-sink(relay-a): BLOCKED; worker(relay-b) → свой sink: REACHED;
+helm-test(relay-a) → API(relay-b): BLOCKED. Пробы — Job-поды (ждавшие 15с:
+правила NetPolicy конвергируют несколько секунд). Ограничение: egress фильтруется
+по IP/CIDR, не по DNS-имени (см. SECURITY.md).
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

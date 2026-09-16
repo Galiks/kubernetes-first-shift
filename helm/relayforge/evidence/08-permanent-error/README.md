@@ -1,11 +1,14 @@
 # Сценарий 08: permanent error
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+Incident values: signing-ключ worker ≠ verification-ключ sink (`--set
+worker.signingSecret.name=relay-a-signing` для relay-t). Sink → 401; worker exit 12;
+podFailurePolicy FailJob → Job `failed` БЕЗ исчерпания попыток (1 pod);
+подпись/секреты в логах отсутствуют. Конфигурация автоматически восстанавливается.
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

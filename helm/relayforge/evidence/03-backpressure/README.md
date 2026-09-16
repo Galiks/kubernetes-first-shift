@@ -1,11 +1,17 @@
 # Сценарий 03: backpressure
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+```bash
+RELEASE=relay-t API_PORT=18080 SINK_PORT=18081 bash evidence/03-backpressure/run.sh
+```
+sink в `slow`, burst 5 → принято 2, отклонено 3 (503 + Retry-After: 5), активных
+доставок ≤ 2, отклонённые не создали Jobs; после освобождения слота повтор принят.
+Подсчёт — namespace-scoped watch + локальное атомарное резервирование (без
+cluster-wide list).
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

@@ -21,7 +21,7 @@ make cluster                      # или: bash cluster/cluster_create.sh
 
 # 3. Секреты ДО установки (client-auth, signing, verification для клиентов
 #    relay-a и relay-b; токены для verify.py пишутся в файлы рядом):
-bash cluster/sercret_create.sh relayforge relay-a relay-b
+bash cluster/secret_create.sh relayforge relay-a relay-b
 
 # 4. Сборка образа, публикация chart и digest:
 make build && make publish        # и/или: bash scripts/build.sh && bash scripts/publish.sh

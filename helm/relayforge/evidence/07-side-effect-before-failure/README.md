@@ -1,11 +1,13 @@
 # Сценарий 07: side effect before failure
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+sink `accept-and-drop`: применяет событие и закрывает соединение без ответа →
+worker видит сетевую ошибку, Job повторяет; итог `succeeded`, sink: attempts ≥ 2,
+applied=1 (попытки персистятся в receipts — переживают restart контейнера).
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

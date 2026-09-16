@@ -1,11 +1,14 @@
 # Сценарий 09: worker pod deletion
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+sink `slow`, чтение логов до удаления, `kubectl delete pod` в середине попытки →
+Job controller создаёт новую попытку; доставка `succeeded`; счётчики
+status.failed+succeeded = 2; Events и Job сохранены. Логи первого Pod могут быть
+потеряны — для гарантии нужен централизованный сбор (Fluent Bit/vector + storage).
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения

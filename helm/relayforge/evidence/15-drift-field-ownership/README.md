@@ -1,11 +1,15 @@
 # Сценарий 15: drift field ownership
 
 ## Цель
-См. run.sh и RUNBOOK.md (раздел про сценарии evidence).
+`--server-side=true` install; `kubectl apply --server-side --force-conflicts
+--field-manager=drift-test` меняет `spec.replicas`=3; `helm upgrade` без
+`--force-conflicts` → конфликт с `drift-test` (.spec.replicas), владелец поля —
+`drift-test`; осознанное разрешение: `helm upgrade --force-conflicts` → ownership
+у `helm`, replicas=1 (managedFields до/после сохранены).
 
 ## Предусловия
 - k3d-кластер (3 ноды); releases relay-a/relay-b/relay-t установлены из OCI;
-- секреты созданы (cluster/sercret_create.sh); digest в cluster/image-digest.txt;
+- секреты созданы (cluster/secret_create.sh); digest в cluster/image-digest.txt;
 - port-forwards на API/test-sink (см. run.sh).
 
 ## Шаги воспроизведения
