@@ -1,0 +1,4 @@
+old_uid=40ce2160-93cf-4655-996d-61912235c796
+new_uid=51e250f2-8dfc-44ba-b7d7-8a7c9df806b0
+receipt_gone=True
+emptyDir привязан к Pod: замена Pod уничтожает содержимое

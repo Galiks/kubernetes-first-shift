@@ -1,0 +1,5 @@
+delivery_status=succeeded
+sink_http_attempts=3
+sink_applied=True
+api_attempts=3
+sink возвращал 503 дважды; третья попытка — 204

@@ -1,0 +1,144 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    relayforge/created-at: "2026-09-13T07:36:35.116985+00:00"
+    relayforge/delivery-id: relay-t-d3f423e0a9bccb1b
+    relayforge/format-version: "1"
+    relayforge/idempotency-key-hash: 814eb640d46fb34a100de492a1b3b9572e4595125d2ea1a2cfa997ca36488c50
+    relayforge/request-hash: 187a40fea427e06e343b6daae005eefb67d965fe925a77ca9f0cbfeb1e4bae01
+    relayforge/secret-revision: "1"
+  creationTimestamp: "2026-09-13T07:36:35Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: delivery
+    app.kubernetes.io/instance: relay-t
+    app.kubernetes.io/name: relayforge
+    relayforge/delivery-id: relay-t-d3f423e0a9bccb1b
+  name: relay-t-814eb640d46fb34a100de492a1b3b9572e4595125d2ea1a2cfa997c
+  namespace: relayforge
+  resourceVersion: "13312"
+  uid: 5ad7bf11-84f5-48eb-be71-a160920c8a43
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 3
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: worker
+        operator: In
+        values:
+        - 12
+  podReplacementPolicy: Failed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 5ad7bf11-84f5-48eb-be71-a160920c8a43
+  suspend: false
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: delivery
+        app.kubernetes.io/instance: relay-t
+        app.kubernetes.io/name: relayforge
+        batch.kubernetes.io/controller-uid: 5ad7bf11-84f5-48eb-be71-a160920c8a43
+        batch.kubernetes.io/job-name: relay-t-814eb640d46fb34a100de492a1b3b9572e4595125d2ea1a2cfa997c
+        controller-uid: 5ad7bf11-84f5-48eb-be71-a160920c8a43
+        job-name: relay-t-814eb640d46fb34a100de492a1b3b9572e4595125d2ea1a2cfa997c
+        relayforge/delivery-id: relay-t-d3f423e0a9bccb1b
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - python
+        - -m
+        - relayforge
+        - worker
+        env:
+        - name: RELAYFORGE_DELIVERY_ID
+          value: relay-t-d3f423e0a9bccb1b
+        - name: RELAYFORGE_DESTINATION
+          value: test
+        - name: RELAYFORGE_EVENT_TYPE
+          value: scenario09.event
+        - name: RELAYFORGE_PAYLOAD
+          value: '{"n":1}'
+        - name: RELAYFORGE_RELEASE
+          value: relay-t
+        - name: RELAYFORGE_NAMESPACE
+          value: relayforge
+        image: relayforge-registry:5050/relayforge@sha256:8fb232af561633d17b024bfca6fe4f8885e2ce215bfa75126b5f521a0c4b9772
+        imagePullPolicy: IfNotPresent
+        name: worker
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/relayforge/config
+          name: config
+          readOnly: true
+        - mountPath: /etc/relayforge/secrets
+          name: secrets
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: relay-t-relayforge-worker
+      serviceAccountName: relay-t-relayforge-worker
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: relay-t-relayforge-destinations
+        name: config
+      - name: secrets
+        secret:
+          defaultMode: 420
+          items:
+          - key: signing-key
+            path: signing-key
+          secretName: relay-t-signing
+  ttlSecondsAfterFinished: 60
+status:
+  completionTime: "2026-09-13T07:37:08Z"
+  conditions:
+  - lastProbeTime: "2026-09-13T07:37:08Z"
+    lastTransitionTime: "2026-09-13T07:37:08Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: SuccessCriteriaMet
+  - lastProbeTime: "2026-09-13T07:37:08Z"
+    lastTransitionTime: "2026-09-13T07:37:08Z"
+    message: Reached expected number of succeeded pods
+    reason: CompletionsReached
+    status: "True"
+    type: Complete
+  failed: 1
+  ready: 0
+  startTime: "2026-09-13T07:36:35Z"
+  succeeded: 1
+  terminating: 0
+  uncountedTerminatedPods: {}

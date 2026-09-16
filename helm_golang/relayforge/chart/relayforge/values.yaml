@@ -1,0 +1,76 @@
+image:
+  repository: localhost:5050/relayforge
+  # digest зафиксирован в release values (см. scripts/build.sh и install.sh).
+  # Пустое значение проходит schema, но установка без digest невозможна.
+  digest: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+api:
+  port: 8080
+  replicas: 1
+  # Fault injection (только test profile, сценарий 02): API один раз отвечает
+  # 503 CREATE_AMBIGUOUS после того, как API server принял Job.
+  testFaultCreateTimeout: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  backpressure:
+    maxActiveJobs: 10
+    maxConcurrentCreate: 2
+
+worker:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 600
+  permanentExitCode: 12
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  signingSecret:
+    # Имя Secret обязательно переопределяется в release-профиле
+    # (см. values-relay-*.yaml); здесь только проходит schema.
+    name: "REPLACE-signing"
+    key: "signing-key"
+
+testSink:
+  enabled: true
+  port: 8080
+  verificationSecret:
+    name: "REPLACE-verification"
+    key: "verification-key"
+  controlSecret:
+    name: "REPLACE-verification"
+    key: "control-token"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+clientAuthSecret:
+  name: "REPLACE-client-auth"
+  key: "client-token"
+
+secretRevision: "1"
+
+networkPolicy:
+  enabled: true
+  # CIDR, где реально слушает Kubernetes API после DNAT сервиса (для k3d —
+  # сеть нод; оператор задаёт CIDR своего зафиксированного кластера).
+  kubernetesApiCidr: "172.18.0.0/16"
+  externalDestinationCidrs: []
+
+cleanup:
+  activeDeadlineSeconds: 120

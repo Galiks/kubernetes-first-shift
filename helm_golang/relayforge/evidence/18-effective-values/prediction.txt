@@ -1,0 +1,13 @@
+Цепочка: values.yaml + values-relay-a.yaml + --set image.digest +
+         --set api.replicas=2 --set-string secretRevision=042
+Прогноз effective values:
+  image.digest          = sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0
+  api.replicas          = 2      (CLI --set, перекрывает values.yaml=1)
+  api.port              = 8080   (default)
+  api.backpressure.maxActiveJobs = 10 (default)
+  worker.signingSecret.name      = relay-a-signing (values-relay-a)
+  clientAuthSecret.name          = relay-a-client-auth (values-relay-a)
+  destinations.test.url          = http://relay-a-relayforge-test-sink:8080
+  secretRevision        = '042'  (--set-string: СТРОКА, не число)
+  networkPolicy.enabled = true   (default)
+  testSink.enabled      = true   (default)

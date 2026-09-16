@@ -1,0 +1,4 @@
+livez=200
+endpointslice_ready_false=1 (прямой доступ kubelet к /readyz: 503)
+can_i_list_jobs_without_rule=no
+restarts: 0 -> 0

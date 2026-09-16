@@ -1,0 +1,124 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    relayforge/created-at: "2026-09-13T09:27:58.212500+00:00"
+    relayforge/delivery-id: relay-a-43907ee7cf4a91c1
+    relayforge/format-version: "1"
+    relayforge/idempotency-key-hash: 43a24adfbe8e977ae9e9a5ea19f1bbd148a506bf67bdeb8e2a4b27e7f467b7ad
+    relayforge/request-hash: c9b0d67d759cfd28c68a04b0e6a0c90c119637dbd966b5c84897035880c18b8d
+    relayforge/secret-revision: "1"
+  creationTimestamp: "2026-09-13T09:27:58Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: delivery
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/name: relayforge
+    relayforge/delivery-id: relay-a-43907ee7cf4a91c1
+  name: relay-a-43a24adfbe8e977ae9e9a5ea19f1bbd148a506bf67bdeb8e2a4b27e
+  namespace: relayforge
+  resourceVersion: "22398"
+  uid: 391e995f-ab37-4a17-a77f-a00e1fd387b5
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 3
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: worker
+        operator: In
+        values:
+        - 12
+  podReplacementPolicy: Failed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 391e995f-ab37-4a17-a77f-a00e1fd387b5
+  suspend: false
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: delivery
+        app.kubernetes.io/instance: relay-a
+        app.kubernetes.io/name: relayforge
+        batch.kubernetes.io/controller-uid: 391e995f-ab37-4a17-a77f-a00e1fd387b5
+        batch.kubernetes.io/job-name: relay-a-43a24adfbe8e977ae9e9a5ea19f1bbd148a506bf67bdeb8e2a4b27e
+        controller-uid: 391e995f-ab37-4a17-a77f-a00e1fd387b5
+        job-name: relay-a-43a24adfbe8e977ae9e9a5ea19f1bbd148a506bf67bdeb8e2a4b27e
+        relayforge/delivery-id: relay-a-43907ee7cf4a91c1
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - python
+        - -m
+        - relayforge
+        - worker
+        env:
+        - name: RELAYFORGE_DELIVERY_ID
+          value: relay-a-43907ee7cf4a91c1
+        - name: RELAYFORGE_DESTINATION
+          value: test
+        - name: RELAYFORGE_EVENT_TYPE
+          value: scenario01.event
+        - name: RELAYFORGE_PAYLOAD
+          value: '{"invoice_id":"inv-1842","amount":1990}'
+        - name: RELAYFORGE_RELEASE
+          value: relay-a
+        - name: RELAYFORGE_NAMESPACE
+          value: relayforge
+        image: relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0
+        imagePullPolicy: IfNotPresent
+        name: worker
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/relayforge/config
+          name: config
+          readOnly: true
+        - mountPath: /etc/relayforge/secrets
+          name: secrets
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: relay-a-relayforge-worker
+      serviceAccountName: relay-a-relayforge-worker
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: relay-a-relayforge-destinations
+        name: config
+      - name: secrets
+        secret:
+          defaultMode: 420
+          items:
+          - key: signing-key
+            path: signing-key
+          secretName: relay-a-signing
+  ttlSecondsAfterFinished: 600
+status: {}

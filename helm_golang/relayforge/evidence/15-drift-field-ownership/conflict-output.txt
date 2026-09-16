@@ -1,0 +1,5 @@
+Pulled: localhost:5050/charts/relayforge:0.1.0
+Digest: sha256:d4bf0c51fdfd4413dcff95651fb909344a03bb1873df15330621067d3aef41f6
+level=WARN msg="upgrade failed" name=relay-t error="conflict occurred while applying object relayforge/relay-t-relayforge-api apps/v1, Kind=Deployment: Apply failed with 1 conflict: conflict with \"drift-test\": .spec.replicas"
+level=WARN msg="Rollback \"relay-t\" failed: conflict occurred while applying object relayforge/relay-t-relayforge-api apps/v1, Kind=Deployment: Apply failed with 1 conflict: conflict with \"drift-test\": .spec.replicas"
+Error: UPGRADE FAILED: an error occurred while rolling back the release. original upgrade error: conflict occurred while applying object relayforge/relay-t-relayforge-api apps/v1, Kind=Deployment: Apply failed with 1 conflict: conflict with "drift-test": .spec.replicas: conflict occurred while applying object relayforge/relay-t-relayforge-api apps/v1, Kind=Deployment: Apply failed with 1 conflict: conflict with "drift-test": .spec.replicas

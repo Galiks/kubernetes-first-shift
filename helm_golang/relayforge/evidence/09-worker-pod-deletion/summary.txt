@@ -1,0 +1,7 @@
+worker_pod_deleted=relay-t-814eb640d46fb34a100de492a1b3b9572e4595125d2ea1a2cfgzf9n
+final_status=succeeded api_attempts(текущие pods)=1
+job_attempts_total(failed+succeeded)=2
+Job controller создал новую попытку после удаления Pod;
+логи первого Pod могли быть потеряны вместе с ним — для гарантированного
+сохранения потребовалось бы централизованное решение (e.g. Fluent Bit/
+vector на узлах + object storage/elastic, или streaming-коллектор с буфером)

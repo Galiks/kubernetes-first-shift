@@ -1,0 +1,5 @@
+uid_before=40ce2160-93cf-4655-996d-61912235c796
+uid_after=40ce2160-93cf-4655-996d-61912235c796
+restarts_before=2 restarts_after=3
+receipt_present=True
+emptyDir переживает restart контейнера в том же Pod

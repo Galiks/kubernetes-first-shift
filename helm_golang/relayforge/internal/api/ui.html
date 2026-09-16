@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RelayForge — панель доставок</title>
+<style>
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.45 system-ui, "Segoe UI", Roboto, sans-serif;
+       background: #0f1420; color: #dce3f0; }
+header { display: flex; align-items: baseline; gap: 16px; padding: 14px 20px;
+         background: #161d2e; border-bottom: 1px solid #27324a; position: sticky; top: 0; z-index: 5; }
+header h1 { font-size: 17px; margin: 0; }
+header .release { color: #8fb7ff; font-weight: 600; }
+header .hint { color: #7d8aa5; font-size: 12px; margin-left: auto; }
+.wrap { padding: 18px 20px; display: grid; gap: 16px; max-width: 1500px; margin: 0 auto; }
+.card { background: #161d2e; border: 1px solid #27324a; border-radius: 10px; padding: 14px 16px; }
+.card h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #93a3c0; }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 1100px) { .cols2 { grid-template-columns: 1fr; } }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.stat { background: #10162a; border: 1px solid #24304a; border-radius: 8px; padding: 8px 12px; }
+.stat b { display: block; font-size: 18px; }
+.stat span { color: #7d8aa5; font-size: 11px; }
+form { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 200px 1fr 1fr; gap: 10px; }
+.srow { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+label { color: #93a3c0; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+input, select, textarea { background: #0e1426; color: #dce3f0; border: 1px solid #2b3854;
+       border-radius: 6px; padding: 8px 10px; font: inherit; }
+textarea { resize: vertical; min-height: 84px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+button { background: #2c6df0; color: #fff; border: 0; border-radius: 8px; padding: 11px 22px;
+         font-size: 15px; font-weight: 600; cursor: pointer; }
+button:hover { background: #3f7df6; }
+button:disabled { background: #31405f; cursor: wait; }
+button.ghost { background: #23304a; }
+button.ghost:hover { background: #2d3d5e; }
+button.warn { background: #8a2f3a; }
+button.warn:hover { background: #a33a48; }
+#result, #sink-result { min-height: 22px; font-size: 13px; }
+#result.ok, .ok-txt { color: #7ee2a8; }
+#result.err, .err-txt { color: #ff9d9d; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #1d2638; vertical-align: top; }
+th { color: #7d8aa5; font-weight: 600; position: sticky; top: 57px; background: #161d2e; }
+td.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge.queued { background: #233048; color: #9db2d8; }
+.badge.running { background: #25436b; color: #8fc6ff; }
+.badge.succeeded { background: #123824; color: #7ee2a8; }
+.badge.failed { background: #4a1720; color: #ff9d9d; }
+.badge-pass { background: #123824; color: #7ee2a8; }
+.badge-fail { background: #4a1720; color: #ff9d9d; }
+.failure { color: #ff9d9d; font-size: 12px; max-width: 380px; }
+.empty { color: #7d8aa5; padding: 14px; text-align: center; }
+#refreshing { color: #7d8aa5; font-size: 12px; }
+pre.logs { background: #0a101d; border: 1px solid #24304a; border-radius: 8px; padding: 12px;
+           max-height: 360px; overflow: auto; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+.test-step { display: flex; gap: 8px; align-items: baseline; font-size: 13px; padding: 3px 0; }
+.test-step .mark { font-weight: 700; }
+.test-history-item { border-top: 1px solid #1d2638; padding: 8px 0; }
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+dialog { background: #161d2e; color: #dce3f0; border: 1px solid #2b3854; border-radius: 10px; max-width: 900px; width: 92vw; }
+dialog::backdrop { background: rgba(5, 8, 16, .7); }
+</style>
+</head>
+<body>
+<header>
+  <h1>RelayForge — панель доставок</h1>
+  <span class="release" id="release-label">…</span>
+  <span class="hint" id="refreshing">обновление каждые 3 с</span>
+</header>
+<div class="wrap">
+
+  <div class="card">
+    <h2>Метрики</h2>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="cols2">
+    <div class="card">
+      <h2>Новая доставка</h2>
+      <form id="delivery-form" autocomplete="off">
+        <div class="row">
+          <label>Destination
+            <select id="f-destination" name="destination"></select>
+          </label>
+          <label>Event type
+            <input id="f-event" name="event_type" value="ui.test" placeholder="app.event">
+          </label>
+          <label>Idempotency-Key (пусто = авто)
+            <input id="f-key" name="idempotency_key" placeholder="ui:my-key:v1">
+          </label>
+        </div>
+        <label>Payload (JSON)
+          <textarea id="f-payload" name="payload" spellcheck="false">{&quot;message&quot;: &quot;hello&quot;}</textarea>
+        </label>
+        <div class="toolbar">
+          <button type="submit" id="start-btn">▶ Начать</button>
+          <button type="button" class="ghost" id="run-test-btn">🧪 Запустить тест</button>
+          <span id="result"></span>
+        </div>
+      </form>
+      <div id="test-steps" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Тестовый приёмник (test-sink)</h2>
+      <div class="srow">
+        <label>Режим
+          <select id="sink-mode">
+            <option value="normal">normal</option>
+            <option value="fail-first">fail-first (N×503)</option>
+            <option value="accept-and-drop">accept-and-drop</option>
+            <option value="reject">reject (401)</option>
+            <option value="slow">slow</option>
+          </select>
+        </label>
+        <label>N (fail-first)
+          <input id="sink-n" type="number" min="1" value="1" style="width:90px">
+        </label>
+        <button type="button" class="ghost" id="sink-apply-btn">Применить</button>
+        <button type="button" class="warn" id="sink-reset-btn">Сбросить</button>
+        <span id="sink-result"></span>
+      </div>
+      <div id="sink-state" style="margin-top:8px;color:#93a3c0;font-size:13px"></div>
+    </div>
+  </div>
+
+  <div id="test-history" class="card"></div>
+
+  <div class="card">
+    <h2>Доставки (<span id="count">0</span>)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Создана</th><th>ID / Job</th><th>Статус</th><th>Destination</th>
+          <th>Event</th><th>Попытки</th><th>Sink</th><th>Завершена</th><th>Retained</th><th>Сбой</th><th>Логи</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty">Доставок пока нет — нажмите «Начать».</div>
+  </div>
+</div>
+
+<dialog id="logs-dialog">
+  <div class="toolbar" style="margin-bottom:8px">
+    <b id="logs-title">Логи</b>
+    <button type="button" class="ghost" id="logs-close" style="margin-left:auto">Закрыть</button>
+  </div>
+  <pre class="logs" id="logs-body">…</pre>
+</dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const API = "/ui/api";
+let config = null;
+
+function fmt(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d) ? "—" : d.toLocaleString("ru-RU");
+}
+function esc(t) {
+  const d = document.createElement("div");
+  d.textContent = t == null ? "" : String(t);
+  return d.innerHTML;
+}
+
+async function loadConfig() {
+  try {
+    config = await (await fetch(API + "/config")).json();
+    $("release-label").textContent = config.release + " / " + config.namespace;
+    const sel = $("f-destination");
+    sel.innerHTML = "";
+    config.destinations.forEach((d) => {
+      const o = document.createElement("option");
+      o.value = d; o.textContent = d; sel.appendChild(o);
+    });
+  } catch (e) { $("release-label").textContent = "?"; }
+  return config;
+}
+
+function statChip(label, value) {
+  const el = document.createElement("div");
+  el.className = "stat";
+  const b = document.createElement("b"); b.textContent = value ?? "–";
+  const s = document.createElement("span"); s.textContent = label;
+  el.append(b, s);
+  return el;
+}
+
+async function loadStats() {
+  try {
+    const s = await (await fetch(API + "/stats")).json();
+    const box = $("stats"); box.innerHTML = "";
+    box.append(
+      statChip("Запросов всего", s.requests_total),
+      statChip("Успех (202/200)", s.requests_success),
+      statChip("Конфликты 409", s.requests_conflict),
+      statChip("Backpressure", s.requests_backpressure),
+      statChip("Ошибки 4xx", s.requests_invalid),
+      statChip("401", s.requests_unauthorized),
+      statChip("Jobs создано", s.jobs_created_total),
+      statChip("Активных Jobs", s.active_jobs),
+      statChip("Старейший активный, с", Math.round(s.oldest_active_job_seconds || 0) + " с"),
+    );
+  } catch (e) { /* временно недоступно */ }
+}
+
+async function loadSinkState() {
+  try {
+    const s = await (await fetch(API + "/sink/state")).json();
+    $("sink-state").textContent =
+      "Режим: " + s.mode + (s.mode === "fail-first" ? " (N=" + s.fail_first_n + ")" : "") +
+      " · receipts: " + s.receipts_count;
+  } catch (e) {
+    $("sink-state").textContent = "test-sink недоступен";
+  }
+}
+
+function badge(status) {
+  const span = document.createElement("span");
+  span.className = "badge " + status;
+  span.textContent = status;
+  return span.outerHTML;
+}
+
+async function loadDeliveries() {
+  try {
+    const r = await (await fetch(API + "/deliveries?limit=100")).json();
+    $("count").textContent = r.count;
+    const tb = $("rows");
+    tb.innerHTML = "";
+    $("empty").style.display = r.deliveries.length ? "none" : "block";
+    r.deliveries.forEach((d) => {
+      const tr = document.createElement("tr");
+      const c = (v, cls) => { const td = document.createElement("td"); td.className = cls || ""; td.textContent = v ?? "—"; return td; };
+      tr.append(c(fmt(d.created_at), "mono"));
+      const idTd = document.createElement("td");
+      idTd.className = "mono";
+      idTd.innerHTML = esc(d.id) + "<br><span style='color:#7d8aa5;font-size:11px'>" + esc(d.job) + "</span>";
+      tr.append(idTd);
+      const stTd = document.createElement("td"); stTd.innerHTML = badge(d.status); tr.append(stTd);
+      tr.append(c(d.destination));
+      tr.append(c(d.event_type, "mono"));
+      tr.append(c(d.attempts));
+      const sTd = document.createElement("td");
+      if (d.sink_state) {
+        sTd.innerHTML = "attempts: <b>" + d.sink_state.attempts + "</b> · applied: <b>" + d.sink_state.applied + "</b>";
+      } else { sTd.textContent = "—"; }
+      tr.append(sTd);
+      tr.append(c(fmt(d.finished_at), "mono"));
+      tr.append(c(fmt(d.retained_until), "mono"));
+      const fTd = document.createElement("td");
+      if (d.failure) { fTd.className = "failure"; fTd.textContent = (d.failure.message || "").slice(0, 200); }
+      tr.append(fTd);
+      const lTd = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.className = "ghost"; btn.textContent = "лог";
+      btn.style.padding = "4px 10px"; btn.style.fontSize = "12px";
+      btn.onclick = () => showLogs(d.id);
+      lTd.appendChild(btn);
+      tr.append(lTd);
+      tb.appendChild(tr);
+    });
+  } catch (e) { /* следующее обновление */ }
+}
+
+async function showLogs(deliveryId) {
+  const dlg = $("logs-dialog");
+  $("logs-title").textContent = "Логи worker: " + deliveryId;
+  $("logs-body").textContent = "Загрузка…";
+  dlg.showModal();
+  try {
+    const r = await (await fetch(API + "/deliveries/" + encodeURIComponent(deliveryId) + "/logs")).json();
+    $("logs-body").textContent = r.logs || "(логов нет)";
+  } catch (e) {
+    $("logs-body").textContent = "Ошибка: " + e;
+  }
+}
+$("logs-close").onclick = () => $("logs-dialog").close();
+
+async function startDelivery(ev) {
+  ev.preventDefault();
+  const btn = $("start-btn"), res = $("result");
+  btn.disabled = true; res.className = ""; res.textContent = "Отправка…";
+  let payload;
+  try { payload = JSON.parse($("f-payload").value); }
+  catch (e) { res.className = "err"; res.textContent = "Payload — невалидный JSON"; btn.disabled = false; return; }
+  const body = {
+    destination: $("f-destination").value,
+    event_type: $("f-event").value.trim(),
+    payload: payload,
+  };
+  const key = $("f-key").value.trim();
+  if (key) body.idempotency_key = key;
+  try {
+    const r = await fetch(API + "/deliveries", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    const j = await r.json();
+    if (r.ok) {
+      res.className = "ok";
+      res.textContent = "Принято: " + j.id + " (duplicate: " + j.duplicate + ")";
+      loadDeliveries(); loadStats();
+    } else {
+      res.className = "err";
+      res.textContent = (j.error && j.error.message) ? (j.error.code + ": " + j.error.message) : ("HTTP " + r.status);
+    }
+  } catch (e) {
+    res.className = "err"; res.textContent = "Ошибка соединения: " + e;
+  } finally { btn.disabled = false; }
+}
+
+async function runTest() {
+  const btn = $("run-test-btn");
+  btn.disabled = true; btn.textContent = "Тест идёт…";
+  $("test-steps").innerHTML = "";
+  try {
+    const r = await fetch(API + "/tests/run", { method: "POST" });
+    const t = await r.json();
+    const box = $("test-steps");
+    box.innerHTML = "";
+    const head = document.createElement("div");
+    head.innerHTML = t.passed
+      ? "<span class='ok-txt'><b>ТЕСТ ПРОЙДЕН</b></span>"
+      : "<span class='err-txt'><b>ТЕСТ НЕ ПРОЙДЕН</b></span>";
+    head.innerHTML += " · " + (t.delivery_id || "—") + " · " + t.duration_ms + " мс";
+    box.appendChild(head);
+    t.steps.forEach((s) => {
+      const div = document.createElement("div");
+      div.className = "test-step";
+      div.innerHTML = "<span class='mark " + (s.ok ? "ok-txt'>✓" : "err-txt'>✗") + "</span> " +
+        esc(s.name) + " — <span style='color:#7d8aa5'>" + esc(s.detail) + "</span>";
+      box.appendChild(div);
+    });
+    loadDeliveries(); loadStats(); loadSinkState(); loadTestHistory();
+  } catch (e) {
+    $("test-steps").textContent = "Ошибка: " + e;
+  } finally {
+    btn.disabled = false; btn.textContent = "🧪 Запустить тест";
+  }
+}
+
+async function loadTestHistory() {
+  try {
+    const r = await (await fetch(API + "/tests")).json();
+    const box = $("test-history");
+    if (!r.tests.length) { box.innerHTML = ""; return; }
+    box.innerHTML = "<h2>История тестов</h2>";
+    r.tests.slice(0, 6).forEach((t) => {
+      const div = document.createElement("div");
+      div.className = "test-history-item";
+      const mark = t.passed ? "badge-pass" : "badge-fail";
+      div.innerHTML = "<span class='badge " + mark + "'>" + (t.passed ? "PASS" : "FAIL") + "</span> " +
+        " <span class='mono'>" + esc(t.delivery_id || "") + "</span>" +
+        " · " + esc(fmt(t.finished_at)) + " · " + t.duration_ms + " мс · " +
+        t.steps.map((s) => s.name + (s.ok ? " ✓" : " ✗")).join(" → ");
+      box.appendChild(div);
+    });
+  } catch (e) { /* ignore */ }
+}
+
+$("delivery-form").addEventListener("submit", startDelivery);
+$("run-test-btn").addEventListener("click", runTest);
+
+$("sink-apply-btn").addEventListener("click", async () => {
+  const res = $("sink-result");
+  res.className = ""; res.textContent = "Применяю…";
+  try {
+    const r = await fetch(API + "/sink/mode", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: $("sink-mode").value, n: parseInt($("sink-n").value, 10) || 1 }),
+    });
+    const j = await r.json();
+    if (r.ok) { res.className = "ok"; res.textContent = "Режим: " + j.mode; }
+    else { res.className = "err"; res.textContent = (j.error && j.error.message) || ("HTTP " + r.status); }
+    loadSinkState();
+  } catch (e) { res.className = "err"; res.textContent = "Ошибка: " + e; }
+});
+
+$("sink-reset-btn").addEventListener("click", async () => {
+  const res = $("sink-result");
+  res.className = ""; res.textContent = "Сброс…";
+  try {
+    const r = await fetch(API + "/sink/reset", { method: "POST" });
+    const j = await r.json();
+    res.className = r.ok ? "ok" : "err";
+    res.textContent = r.ok ? ("Сброшено: " + JSON.stringify(j)) : ((j.error && j.error.message) || "HTTP " + r.status);
+    loadSinkState();
+  } catch (e) { res.className = "err"; res.textContent = "Ошибка: " + e; }
+});
+
+async function tick() {
+  $("refreshing").textContent = "обновление " + new Date().toLocaleTimeString("ru-RU");
+  await Promise.all([loadStats(), loadDeliveries(), loadSinkState()]);
+}
+loadConfig().then(() => { tick(); loadTestHistory(); setInterval(tick, 3000); });
+</script>
+</body>
+</html>

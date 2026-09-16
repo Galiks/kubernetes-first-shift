@@ -1,0 +1,59 @@
+NAME: relay-a
+LAST DEPLOYED: Sun Sep 13 13:07:17 2026
+NAMESPACE: relayforge
+STATUS: deployed
+REVISION: 7
+DESCRIPTION: Rollback to 5
+RESOURCES:
+==> v1/Pod(related)
+NAME                                      READY   STATUS    RESTARTS   AGE
+relay-a-relayforge-api-764b9cb998-qbh2v   1/1     Running   0          3m47s
+relay-a-relayforge-test-sink-859b595897-9mwkj   1/1   Running   0     12s
+
+==> v1/NetworkPolicy
+NAME                            POD-SELECTOR                                                         AGE
+relay-a-relayforge-api-egress   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-a   73m
+relay-a-relayforge-api-ingress   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-a   73m
+relay-a-relayforge-cleanup-egress   app.kubernetes.io/component=cleanup,app.kubernetes.io/instance=relay-a   73m
+relay-a-relayforge-default-deny   app.kubernetes.io/instance=relay-a   73m
+relay-a-relayforge-helm-test-egress   app.kubernetes.io/component=helm-test,app.kubernetes.io/instance=relay-a   73m
+relay-a-relayforge-test-sink-ingress   app.kubernetes.io/component=test-sink,app.kubernetes.io/instance=relay-a   73m
+relay-a-relayforge-worker-egress   app.kubernetes.io/component=delivery,app.kubernetes.io/instance=relay-a   73m
+
+==> v1/ConfigMap
+NAME                              DATA   AGE
+relay-a-relayforge-destinations   1      73m
+
+==> v1/Role
+NAME                     CREATED AT
+relay-a-relayforge-api   2026-09-13T07:53:45Z
+relay-a-relayforge-cleanup   2026-09-13T07:53:45Z
+
+==> v1/RoleBinding
+NAME                     ROLE                          AGE
+relay-a-relayforge-api   Role/relay-a-relayforge-api   73m
+relay-a-relayforge-cleanup   Role/relay-a-relayforge-cleanup   73m
+
+==> v1/Service
+NAME                           TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+relay-a-relayforge-test-sink   ClusterIP   10.43.79.45   <none>        8080/TCP   73m
+relay-a-relayforge-api   ClusterIP   10.43.224.226   <none>   8080/TCP   73m
+
+==> v1/ServiceAccount
+NAME                     AGE
+relay-a-relayforge-api   73m
+relay-a-relayforge-cleanup   73m
+relay-a-relayforge-helm-test   73m
+relay-a-relayforge-test-sink   73m
+relay-a-relayforge-worker   73m
+
+==> v1/Deployment
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+relay-a-relayforge-api   1/1     1            1           73m
+relay-a-relayforge-test-sink   1/1   1     1     73m
+
+
+TEST SUITE:     relay-a-relayforge-helm-test
+Last Started:   Sun Sep 13 11:57:04 2026
+Last Completed: Sun Sep 13 11:57:22 2026
+Phase:          Succeeded

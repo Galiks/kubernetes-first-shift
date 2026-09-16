@@ -1,0 +1,25 @@
+# Go-исходники (go.mod, go.sum, cmd/, internal/, testdata/) остаются в контексте —
+# они нужны builder-стейджу. Ниже исключается всё, что сборке не нужно.
+
+# Python-артефакты: образ переведён на Go, Python в сборке не участвует.
+__pycache__
+*.pyc
+.venv
+.pytest_cache
+.uv-cache
+
+# Python-исходники: Go-бинарник собирается из ./cmd/relayforge + internal/,
+# src/ в контексте сборки не нужен.
+src/
+
+# VCS и локальные кэши/рабочие каталоги
+.git
+.gitignore
+.cache/
+cluster/
+evidence/
+.helm-charts
+
+# Тесты и секреты в образ не попадают
+tests/
+cluster/*-token.txt

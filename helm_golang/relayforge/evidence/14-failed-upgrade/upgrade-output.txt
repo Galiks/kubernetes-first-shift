@@ -1,0 +1,6 @@
+Pulled: localhost:5050/charts/relayforge:0.1.0
+Digest: sha256:d4bf0c51fdfd4413dcff95651fb909344a03bb1873df15330621067d3aef41f6
+level=WARN msg="upgrade failed" name=relay-a error="resource Deployment/relayforge/relay-a-relayforge-api not ready. status: InProgress, message: Pending termination: 1\nresource Deployment/relayforge/relay-a-relayforge-test-sink not ready. status: InProgress, message: Available: 0/1\ncontext deadline exceeded"
+Error: UPGRADE FAILED: release relay-a failed, and has been rolled back due to rollback-on-failure being set: resource Deployment/relayforge/relay-a-relayforge-api not ready. status: InProgress, message: Pending termination: 1
+resource Deployment/relayforge/relay-a-relayforge-test-sink not ready. status: InProgress, message: Available: 0/1
+context deadline exceeded

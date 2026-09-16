@@ -188,7 +188,7 @@ export KUBECONFIG=$PWD/cluster/kubeconfig.yaml
 пишет токены в файлы для `verify.py`:
 
 ```bash
-bash cluster/sercret_create.sh relayforge relay-a relay-b
+bash cluster/secret_create.sh relayforge relay-a relay-b
 ```
 
 Что создаётся (аргументы: namespace `relayforge`, префиксы `relay-a`, `relay-b`):
@@ -202,10 +202,6 @@ bash cluster/sercret_create.sh relayforge relay-a relay-b
 На диск пишутся `<prefix>-client-token.txt` и `<prefix>-control-token.txt`
 (пути — в `.gitignore`), — их потом читает `verify.py` через env
 `CLIENT_TOKEN_FILE` / `CONTROL_TOKEN_FILE`.
-
-> **Опечатка в имени скрипта:** файл называется `sercret_create.sh` (а не
-> `secret_create.sh`). Это не баг — именно на это имя ссылаются README, RUNBOOK
-> и Makefile. Всегда пишите `sercret_create.sh`.
 
 ### d. Сборка образа и запись digest
 
@@ -681,8 +677,8 @@ NetworkPolicy.
 
 ## Замечание о названиях и расхождениях
 
-- Файл для секретов называется **`cluster/sercret_create.sh`** (опечатка в
-  названии сохранена намеренно — так его зовут README, RUNBOOK и Makefile).
+- Скрипт создания секретов — **`cluster/secret_create.sh`** (ранее в имени
+  была опечатка — исправлена, все ссылки в документации обновлены).
 - `README.md` предлагает на выбор `make cluster` **или** `bash
   cluster/cluster_create.sh`. `make cluster` вызывает k3d напрямую (registry
   `k3d-relayforge-registry:5050`), а `cluster_create.sh` дополнительно задаёт

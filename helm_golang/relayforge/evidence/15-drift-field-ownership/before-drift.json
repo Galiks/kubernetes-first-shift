@@ -1,0 +1,293 @@
+{
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+        "annotations": {
+            "deployment.kubernetes.io/revision": "41",
+            "meta.helm.sh/release-name": "relay-t",
+            "meta.helm.sh/release-namespace": "relayforge"
+        },
+        "creationTimestamp": "2026-09-13T06:30:36Z",
+        "generation": 55,
+        "labels": {
+            "app.kubernetes.io/component": "api",
+            "app.kubernetes.io/instance": "relay-t",
+            "app.kubernetes.io/managed-by": "Helm",
+            "app.kubernetes.io/name": "relayforge",
+            "app.kubernetes.io/version": "0.1.0",
+            "helm.sh/chart": "relayforge-0.1.0"
+        },
+        "name": "relay-t-relayforge-api",
+        "namespace": "relayforge",
+        "resourceVersion": "20946",
+        "uid": "c0371797-3d45-4938-b120-5b6bbc3c889d"
+    },
+    "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+            "matchLabels": {
+                "app.kubernetes.io/component": "api",
+                "app.kubernetes.io/instance": "relay-t",
+                "app.kubernetes.io/name": "relayforge"
+            }
+        },
+        "strategy": {
+            "rollingUpdate": {
+                "maxSurge": 1,
+                "maxUnavailable": 0
+            },
+            "type": "RollingUpdate"
+        },
+        "template": {
+            "metadata": {
+                "annotations": {
+                    "checksum/destinations": "220100625ad09e955cd66b81a331be8ec86149c57e11250731ea0609f1108fd1",
+                    "checksum/secretRevision": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+                },
+                "labels": {
+                    "app.kubernetes.io/component": "api",
+                    "app.kubernetes.io/instance": "relay-t",
+                    "app.kubernetes.io/name": "relayforge"
+                }
+            },
+            "spec": {
+                "automountServiceAccountToken": true,
+                "containers": [
+                    {
+                        "command": [
+                            "python",
+                            "-m",
+                            "relayforge",
+                            "api"
+                        ],
+                        "env": [
+                            {
+                                "name": "RELAYFORGE_RELEASE",
+                                "value": "relay-t"
+                            },
+                            {
+                                "name": "RELAYFORGE_NAMESPACE",
+                                "valueFrom": {
+                                    "fieldRef": {
+                                        "apiVersion": "v1",
+                                        "fieldPath": "metadata.namespace"
+                                    }
+                                }
+                            },
+                            {
+                                "name": "RELAYFORGE_API_PORT",
+                                "value": "8080"
+                            },
+                            {
+                                "name": "RELAYFORGE_IMAGE_REPOSITORY",
+                                "value": "relayforge-registry:5050/relayforge"
+                            },
+                            {
+                                "name": "RELAYFORGE_IMAGE_DIGEST",
+                                "value": "sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0"
+                            },
+                            {
+                                "name": "RELAYFORGE_SIGNING_SECRET_NAME",
+                                "value": "relay-t-signing"
+                            },
+                            {
+                                "name": "RELAYFORGE_SIGNING_SECRET_KEY",
+                                "value": "signing-key"
+                            },
+                            {
+                                "name": "RELAYFORGE_WORKER_SERVICE_ACCOUNT",
+                                "value": "relay-t-relayforge-worker"
+                            },
+                            {
+                                "name": "RELAYFORGE_WORKER_BACKOFF_LIMIT",
+                                "value": "3"
+                            },
+                            {
+                                "name": "RELAYFORGE_WORKER_ACTIVE_DEADLINE",
+                                "value": "300"
+                            },
+                            {
+                                "name": "RELAYFORGE_WORKER_TTL",
+                                "value": "60"
+                            },
+                            {
+                                "name": "RELAYFORGE_WORKER_PERMANENT_EXIT_CODE",
+                                "value": "12"
+                            },
+                            {
+                                "name": "RELAYFORGE_SECRET_REVISION",
+                                "value": "1"
+                            },
+                            {
+                                "name": "RELAYFORGE_API_BACKPRESSURE_MAX_ACTIVE",
+                                "value": "2"
+                            },
+                            {
+                                "name": "RELAYFORGE_API_BACKPRESSURE_MAX_CONCURRENT",
+                                "value": "2"
+                            },
+                            {
+                                "name": "RELAYFORGE_TEST_FAULT_CREATE_TIMEOUT",
+                                "value": "false"
+                            }
+                        ],
+                        "image": "relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0",
+                        "imagePullPolicy": "IfNotPresent",
+                        "livenessProbe": {
+                            "failureThreshold": 3,
+                            "httpGet": {
+                                "path": "/livez",
+                                "port": "http",
+                                "scheme": "HTTP"
+                            },
+                            "periodSeconds": 10,
+                            "successThreshold": 1,
+                            "timeoutSeconds": 1
+                        },
+                        "name": "api",
+                        "ports": [
+                            {
+                                "containerPort": 8080,
+                                "name": "http",
+                                "protocol": "TCP"
+                            }
+                        ],
+                        "readinessProbe": {
+                            "failureThreshold": 3,
+                            "httpGet": {
+                                "path": "/readyz",
+                                "port": "http",
+                                "scheme": "HTTP"
+                            },
+                            "periodSeconds": 5,
+                            "successThreshold": 1,
+                            "timeoutSeconds": 1
+                        },
+                        "resources": {
+                            "limits": {
+                                "cpu": "500m",
+                                "memory": "256Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "128Mi"
+                            }
+                        },
+                        "securityContext": {
+                            "allowPrivilegeEscalation": false,
+                            "capabilities": {
+                                "drop": [
+                                    "ALL"
+                                ]
+                            },
+                            "readOnlyRootFilesystem": true
+                        },
+                        "startupProbe": {
+                            "failureThreshold": 30,
+                            "httpGet": {
+                                "path": "/livez",
+                                "port": "http",
+                                "scheme": "HTTP"
+                            },
+                            "periodSeconds": 2,
+                            "successThreshold": 1,
+                            "timeoutSeconds": 1
+                        },
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File",
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/etc/relayforge/config",
+                                "name": "config",
+                                "readOnly": true
+                            },
+                            {
+                                "mountPath": "/etc/relayforge/secrets",
+                                "name": "secrets",
+                                "readOnly": true
+                            }
+                        ]
+                    }
+                ],
+                "dnsPolicy": "ClusterFirst",
+                "restartPolicy": "Always",
+                "schedulerName": "default-scheduler",
+                "securityContext": {
+                    "fsGroup": 1000,
+                    "runAsNonRoot": true,
+                    "runAsUser": 1000,
+                    "seccompProfile": {
+                        "type": "RuntimeDefault"
+                    }
+                },
+                "serviceAccount": "relay-t-relayforge-api",
+                "serviceAccountName": "relay-t-relayforge-api",
+                "terminationGracePeriodSeconds": 30,
+                "topologySpreadConstraints": [
+                    {
+                        "labelSelector": {
+                            "matchLabels": {
+                                "app.kubernetes.io/component": "api",
+                                "app.kubernetes.io/instance": "relay-t",
+                                "app.kubernetes.io/name": "relayforge"
+                            }
+                        },
+                        "maxSkew": 1,
+                        "topologyKey": "kubernetes.io/hostname",
+                        "whenUnsatisfiable": "ScheduleAnyway"
+                    }
+                ],
+                "volumes": [
+                    {
+                        "configMap": {
+                            "defaultMode": 420,
+                            "name": "relay-t-relayforge-destinations"
+                        },
+                        "name": "config"
+                    },
+                    {
+                        "name": "secrets",
+                        "secret": {
+                            "defaultMode": 420,
+                            "items": [
+                                {
+                                    "key": "client-token",
+                                    "path": "client-token"
+                                }
+                            ],
+                            "secretName": "relay-t-client-auth"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "status": {
+        "availableReplicas": 1,
+        "conditions": [
+            {
+                "lastTransitionTime": "2026-09-13T06:30:36Z",
+                "lastUpdateTime": "2026-09-13T09:01:44Z",
+                "message": "ReplicaSet \"relay-t-relayforge-api-794f85c8b9\" has successfully progressed.",
+                "reason": "NewReplicaSetAvailable",
+                "status": "True",
+                "type": "Progressing"
+            },
+            {
+                "lastTransitionTime": "2026-09-13T09:13:46Z",
+                "lastUpdateTime": "2026-09-13T09:13:46Z",
+                "message": "Deployment has minimum availability.",
+                "reason": "MinimumReplicasAvailable",
+                "status": "True",
+                "type": "Available"
+            }
+        ],
+        "observedGeneration": 55,
+        "readyReplicas": 1,
+        "replicas": 1,
+        "terminatingReplicas": 0,
+        "updatedReplicas": 1
+    }
+}

@@ -1,0 +1,6 @@
+delivery_status=succeeded
+sink_http_attempts=2
+sink_applied=True
+api_attempts=2
+sink применял событие, но соединение закрывалось без ответа;
+worker трактовал это как временную ошибку (net/protocol), Job повторил

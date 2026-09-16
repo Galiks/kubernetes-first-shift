@@ -1,0 +1,20 @@
+{{- if .Values.testSink.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "relayforge.fullname" . }}-test-sink
+  labels:
+    {{- include "relayforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test-sink
+spec:
+  # ClusterIP — доступ только внутри кластера (требование задания)
+  type: ClusterIP
+  selector:
+    {{- include "relayforge.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: test-sink
+  ports:
+  - name: http
+    port: {{ .Values.testSink.port }}
+    targetPort: http
+    protocol: TCP
+{{- end }}

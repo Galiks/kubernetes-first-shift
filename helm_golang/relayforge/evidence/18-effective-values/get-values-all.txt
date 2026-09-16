@@ -1,0 +1,64 @@
+COMPUTED VALUES:
+api:
+  backpressure:
+    maxActiveJobs: 10
+    maxConcurrentCreate: 2
+  port: 8080
+  replicas: 2
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  testFaultCreateTimeout: false
+cleanup:
+  activeDeadlineSeconds: 120
+clientAuthSecret:
+  key: client-token
+  name: relay-a-client-auth
+destinations:
+  test:
+    url: http://relay-a-relayforge-test-sink:8080
+fullnameOverride: ""
+image:
+  digest: sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0
+  repository: relayforge-registry:5050/relayforge
+nameOverride: ""
+networkPolicy:
+  enabled: true
+  externalDestinationCidrs: []
+  kubernetesApiCidr: 172.18.0.0/16
+secretRevision: "042"
+testSink:
+  controlSecret:
+    key: control-token
+    name: relay-a-verification
+  enabled: true
+  port: 8080
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  verificationSecret:
+    key: verification-key
+    name: relay-a-verification
+worker:
+  activeDeadlineSeconds: 300
+  backoffLimit: 3
+  permanentExitCode: 12
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  signingSecret:
+    key: signing-key
+    name: relay-a-signing
+  ttlSecondsAfterFinished: 600

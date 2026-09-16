@@ -1,0 +1,927 @@
+---
+# Source: relayforge/templates/networkpolicy-api-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-api-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: api
+  policyTypes:
+  - Egress
+  egress:
+  # Kubernetes API: egress-правила применяются к трафику ПОСЛЕ DNAT сервиса,
+  # поэтому порт endpoint (6443 для k3s) разрешается вместе с портом сервиса.
+  - to:
+    - ipBlock:
+        cidr: 172.18.0.0/16
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-api-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-api-ingress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: api
+  policyTypes:
+  - Ingress
+  ingress:
+  # Только helm-test этого release; неизвестные client-поды и другой release не проходят.
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: relay-a
+          app.kubernetes.io/component: helm-test
+    ports:
+    - port: 8080
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-cleanup-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-cleanup-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: cleanup
+  policyTypes:
+  - Egress
+  egress:
+  # Kubernetes API: egress-правила применяются к трафику ПОСЛЕ DNAT сервиса,
+  # поэтому порт endpoint (6443 для k3s) разрешается вместе с портом сервиса.
+  - to:
+    - ipBlock:
+        cidr: 172.18.0.0/16
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-default-deny.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-default-deny
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Source: relayforge/templates/networkpolicy-helm-test-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-helm-test-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: helm-test
+  policyTypes:
+  - Egress
+  egress:
+  # К API этого release
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: relay-a
+          app.kubernetes.io/component: api
+    ports:
+    - port: 8080
+      protocol: TCP
+  # К test-sink этого release
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: relay-a
+          app.kubernetes.io/component: test-sink
+    ports:
+    - port: 8080
+      protocol: TCP
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-test-sink-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-test-sink-ingress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: test-sink
+  policyTypes:
+  - Ingress
+  ingress:
+  # От worker этого release
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: relay-a
+          app.kubernetes.io/component: delivery
+    ports:
+    - port: 8080
+      protocol: TCP
+  # От helm-test этого release
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: relay-a
+          app.kubernetes.io/component: helm-test
+    ports:
+    - port: 8080
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-worker-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-worker-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: delivery
+  policyTypes:
+  - Egress
+  egress:
+  # In-cluster destination (если включён в конфигурации release)
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: relay-a
+          app.kubernetes.io/component: test-sink
+    ports:
+    - port: 8080
+      protocol: TCP
+  # Внешние destinations (CIDR из values)
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+# Source: relayforge/templates/pdb-api.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: relay-a-relayforge-api
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: relayforge
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: api
+---
+# Source: relayforge/templates/serviceaccount-api.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: relay-a-relayforge-api
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: api
+automountServiceAccountToken: false
+---
+# Source: relayforge/templates/serviceaccount-cleanup.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: relay-a-relayforge-cleanup
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: cleanup
+automountServiceAccountToken: false
+---
+# Source: relayforge/templates/serviceaccount-helm-test.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: relay-a-relayforge-helm-test
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: helm-test
+automountServiceAccountToken: false
+---
+# Source: relayforge/templates/serviceaccount-test-sink.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: relay-a-relayforge-test-sink
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: test-sink
+automountServiceAccountToken: false
+---
+# Source: relayforge/templates/serviceaccount-worker.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: relay-a-relayforge-worker
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: worker
+automountServiceAccountToken: false
+---
+# Source: relayforge/templates/configmap-destinations.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: relay-a-relayforge-destinations
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: config
+data:
+  destinations.json: "{\"test\":{\"url\":\"http://relay-a-relayforge-test-sink:8080\"}}"
+---
+# Source: relayforge/templates/role-api.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: relay-a-relayforge-api
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get"]
+  resourceNames: [relay-a-relayforge-api]
+- apiGroups: ["apps"]
+  resources: ["deployments/scale"]
+  verbs: ["get", "patch"]
+  resourceNames: [relay-a-relayforge-api]
+---
+# Source: relayforge/templates/role-cleanup.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: relay-a-relayforge-cleanup
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: cleanup
+rules:
+# Масштабирование своего API Deployment до нуля
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/scale"]
+  verbs: ["get", "patch"]
+  resourceNames:
+  - relay-a-relayforge-api
+# Удаление Jobs своего release
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["list", "delete"]
+---
+# Source: relayforge/templates/rolebinding-api.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: relay-a-relayforge-api
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: relay-a-relayforge-api
+subjects:
+- kind: ServiceAccount
+  name: relay-a-relayforge-api
+---
+# Source: relayforge/templates/rolebinding-cleanup.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: relay-a-relayforge-cleanup
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: cleanup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: relay-a-relayforge-cleanup
+subjects:
+- kind: ServiceAccount
+  name: relay-a-relayforge-cleanup
+  namespace: default
+---
+# Source: relayforge/templates/service-test-sink.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: relay-a-relayforge-test-sink
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: test-sink
+spec:
+  # ClusterIP — доступ только внутри кластера (требование задания)
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/component: test-sink
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+---
+# Source: relayforge/templates/sevice-api.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: relay-a-relayforge-api
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/component: api
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+---
+# Source: relayforge/templates/deployment-api.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relay-a-relayforge-api
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: api
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  progressDeadlineSeconds: 600
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: relayforge
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: relayforge
+        app.kubernetes.io/instance: relay-a
+        app.kubernetes.io/component: api
+      annotations:
+        checksum/destinations: d9c688bdd04102292447db9b01ef5a63c65d43a8cbdeb17492dce4063d6e87fa
+        checksum/secretRevision: 19158c4a7252e121f7367e7e86a3baabbf93fded76110076cfab2b31eb7df887
+    spec:
+      serviceAccountName: relay-a-relayforge-api
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: relayforge
+            app.kubernetes.io/instance: relay-a
+            app.kubernetes.io/component: api
+      containers:
+      - name: api
+        image: localhost:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "relayforge", "api"]
+        env:
+        - name: RELAYFORGE_RELEASE
+          value: "relay-a"
+        - name: RELAYFORGE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: RELAYFORGE_API_PORT
+          value: "8080"
+        - name: RELAYFORGE_IMAGE_REPOSITORY
+          value: "localhost:5050/relayforge"
+        - name: RELAYFORGE_IMAGE_DIGEST
+          value: "sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0"
+        - name: RELAYFORGE_SIGNING_SECRET_NAME
+          value: "relay-a-signing"
+        - name: RELAYFORGE_SIGNING_SECRET_KEY
+          value: "signing-key"
+        - name: RELAYFORGE_WORKER_SERVICE_ACCOUNT
+          value: relay-a-relayforge-worker
+        - name: RELAYFORGE_WORKER_BACKOFF_LIMIT
+          value: "3"
+        - name: RELAYFORGE_WORKER_ACTIVE_DEADLINE
+          value: "300"
+        - name: RELAYFORGE_WORKER_TTL
+          value: "600"
+        - name: RELAYFORGE_WORKER_PERMANENT_EXIT_CODE
+          value: "12"
+        - name: RELAYFORGE_SECRET_REVISION
+          value: "042"
+        - name: RELAYFORGE_API_BACKPRESSURE_MAX_ACTIVE
+          value: "10"
+        - name: RELAYFORGE_API_BACKPRESSURE_MAX_CONCURRENT
+          value: "2"
+        - name: RELAYFORGE_TEST_FAULT_CREATE_TIMEOUT
+          value: "false"
+        ports:
+        - name: http
+          containerPort: 8080
+        startupProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 2
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          periodSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/relayforge/config
+          readOnly: true
+        - name: secrets
+          mountPath: /etc/relayforge/secrets
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: relay-a-relayforge-destinations
+      - name: secrets
+        secret:
+          secretName: relay-a-client-auth
+          items:
+          - key: client-token
+            path: client-token
+---
+# Source: relayforge/templates/deployment-test-sink.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relay-a-relayforge-test-sink
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: test-sink
+spec:
+  # Test-sink всегда одна реплика (требование задания)
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: relayforge
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: test-sink
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: relayforge
+        app.kubernetes.io/instance: relay-a
+        app.kubernetes.io/component: test-sink
+      annotations:
+        # Перезапуск при ротации секретов
+        checksum/secretRevision: 19158c4a7252e121f7367e7e86a3baabbf93fded76110076cfab2b31eb7df887
+    spec:
+      # Отдельный ServiceAccount без RBAC
+      serviceAccountName: relay-a-relayforge-test-sink
+      automountServiceAccountToken: false
+
+      # Pod-level security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        # fsGroup даёт non-root процессу право писать в emptyDir
+        # БЕЗ privileged и БЕЗ root init container (требование задания)
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+      - name: test-sink
+        image: localhost:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0
+        imagePullPolicy: IfNotPresent
+        # Exec-form без shell (требование задания)
+        command: ["python", "-m", "relayforge", "test-sink"]
+
+        env:
+        - name: RELAYFORGE_RELEASE
+          value: "relay-a"
+        - name: RELAYFORGE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: RELAYFORGE_TEST_SINK_PORT
+          value: "8080"
+        - name: RELAYFORGE_RECEIPTS_DIR
+          value: "/var/lib/relayforge-test-sink/receipts"
+
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+
+        # Probes
+        startupProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 2
+          failureThreshold: 15
+        readinessProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: http
+          periodSeconds: 10
+          failureThreshold: 3
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
+        # Restricted container security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+
+        volumeMounts:
+        # Секреты: verification key + control-token (read-only)
+        - name: secrets
+          mountPath: /etc/relayforge/secrets
+          readOnly: true
+        # emptyDir для receipts (read-write, но только для тестовой оснастки)
+        - name: receipts
+          mountPath: /var/lib/relayforge-test-sink/receipts
+        # tmp для Python (readOnlyRootFilesystem требует /tmp)
+        - name: tmp
+          mountPath: /tmp
+
+      volumes:
+      # Секреты монтируются как файлы (требование задания)
+      - name: secrets
+        projected:
+          sources:
+          # Verification key (для проверки HMAC)
+          - secret:
+              name: relay-a-verification
+              items:
+              - key: verification-key
+                path: verification-key
+          # Control token (для управления режимами)
+          - secret:
+              name: relay-a-verification
+              items:
+              - key: control-token
+                path: control-token
+
+      # emptyDir: данные переживают restart контейнера, но НЕ замену Pod
+      - name: receipts
+        emptyDir:
+          sizeLimit: 10Mi
+
+      # Временная директория для Python
+      - name: tmp
+        emptyDir:
+          sizeLimit: 5Mi
+---
+# Source: relayforge/templates/job-helm-test.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: relay-a-relayforge-helm-test
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: helm-test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 120
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: relayforge
+        app.kubernetes.io/instance: relay-a
+        app.kubernetes.io/component: helm-test
+    spec:
+      serviceAccountName: relay-a-relayforge-helm-test
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: helm-test
+        image: localhost:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "relayforge", "helm-test"]
+        env:
+        - name: RELAYFORGE_API_URL
+          value: "http://relay-a-relayforge-api:8080"
+        - name: RELAYFORGE_SINK_URL
+          value: "http://relay-a-relayforge-test-sink:8080"
+        - name: RELAYFORGE_DESTINATION
+          value: "test"
+        - name: RELAYFORGE_RELEASE
+          value: "relay-a"
+        - name: RELAYFORGE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: client-auth
+          mountPath: /etc/relayforge/secrets/client-token
+          subPath: client-token
+          readOnly: true
+        - name: control-token
+          mountPath: /etc/relayforge/secrets/control-token
+          subPath: control-token
+          readOnly: true
+      volumes:
+      - name: client-auth
+        secret:
+          secretName: relay-a-client-auth
+      - name: control-token
+        secret:
+          secretName: relay-a-verification
+---
+# Source: relayforge/templates/job-pre-delete-cleanup.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: relay-a-relayforge-cleanup
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: cleanup
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 120
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: relayforge
+        app.kubernetes.io/instance: relay-a
+        app.kubernetes.io/component: cleanup
+    spec:
+      serviceAccountName: relay-a-relayforge-cleanup
+      automountServiceAccountToken: true
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: cleanup
+        image: localhost:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "relayforge", "cleanup"]
+        env:
+        - name: RELAYFORGE_RELEASE
+          value: "relay-a"
+        - name: RELAYFORGE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]

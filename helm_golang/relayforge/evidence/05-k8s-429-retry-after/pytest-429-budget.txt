@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.3.4, pluggy-1.6.0 -- /home/pavel/Рабочий стол/Projects/kubernetes-first-shift/helm/relayforge/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/pavel/Рабочий стол/Projects/kubernetes-first-shift/helm/relayforge
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 9 items / 6 deselected / 3 selected
+
+tests/k8s-client-test.py::test_403_raises_without_retry PASSED           [ 33%]
+tests/k8s-client-test.py::test_429_retry_after_then_success PASSED       [ 66%]
+tests/k8s-client-test.py::test_retry_budget_exhaustion_raises_503 PASSED [100%]
+
+======================= 3 passed, 6 deselected in 1.10s ========================

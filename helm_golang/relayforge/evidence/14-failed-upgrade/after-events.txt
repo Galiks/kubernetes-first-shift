@@ -1,0 +1,12 @@
+17s         Warning   Failed              pod/relay-a-relayforge-test-sink-7565769c4b-fhvf8    Error: ImagePullBackOff
+17s         Normal    BackOff             pod/relay-a-relayforge-test-sink-7565769c4b-fhvf8    Back-off pulling image "relayforge-registry:5050/relayforge@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+13s         Normal    ScalingReplicaSet   deployment/relay-a-relayforge-test-sink              Scaled down replica set relay-a-relayforge-test-sink-7565769c4b from 1 to 0
+13s         Normal    SuccessfulDelete    replicaset/relay-a-relayforge-api-75c8c6596d         Deleted pod: relay-a-relayforge-api-75c8c6596d-5d9xq
+13s         Normal    ScalingReplicaSet   deployment/relay-a-relayforge-api                    Scaled down replica set relay-a-relayforge-api-75c8c6596d from 1 to 0
+13s         Normal    SuccessfulDelete    replicaset/relay-a-relayforge-test-sink-7565769c4b   Deleted pod: relay-a-relayforge-test-sink-7565769c4b-fhvf8
+12s         Normal    ScalingReplicaSet   deployment/relay-a-relayforge-test-sink              Scaled up replica set relay-a-relayforge-test-sink-859b595897 from 0 to 1
+12s         Normal    SuccessfulCreate    replicaset/relay-a-relayforge-test-sink-859b595897   Created pod: relay-a-relayforge-test-sink-859b595897-9mwkj
+10s         Normal    Pulled              pod/relay-a-relayforge-test-sink-859b595897-9mwkj    Container image "relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0" already present on machine and can be accessed by the pod
+10s         Normal    Created             pod/relay-a-relayforge-test-sink-859b595897-9mwkj    Container created
+10s         Normal    Started             pod/relay-a-relayforge-test-sink-859b595897-9mwkj    Container started
+4s          Warning   Unhealthy           pod/relay-a-relayforge-test-sink-859b595897-9mwkj    Startup probe failed: Get "http://10.42.1.144:8080/livez": dial tcp 10.42.1.144:8080: connect: connection refused

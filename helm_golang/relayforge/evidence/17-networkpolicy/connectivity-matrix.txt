@@ -1,0 +1,7 @@
+np-helmtest-a (app.kubernetes.io/instance: relay-a, app.kubernetes.io/component: helm-test) | http://relay-a-relayforge-api:8080/livez | ожидалось: REACHED | результат: REACHED | OK=YES
+np-unknown (app.kubernetes.io/instance: diag, app.kubernetes.io/component: client) | http://relay-a-relayforge-api:8080/livez | ожидалось: BLOCKED | результат: BLOCKED(ConnectionRefusedError) | OK=YES
+np-cross (app.kubernetes.io/instance: relay-b, app.kubernetes.io/component: delivery) | http://relay-a-relayforge-test-sink:8080/livez | ожидалось: BLOCKED | результат: BLOCKED(ConnectionRefusedError) | OK=YES
+np-worker-b-own (app.kubernetes.io/instance: relay-b, app.kubernetes.io/component: delivery) | http://relay-b-relayforge-test-sink:8080/livez | ожидалось: REACHED | результат: REACHED | OK=YES
+np-helmtest-a-to-b (app.kubernetes.io/instance: relay-a, app.kubernetes.io/component: helm-test) | http://relay-b-relayforge-api:8080/livez | ожидалось: BLOCKED | результат: BLOCKED(ConnectionRefusedError) | OK=YES
+np-api-a-own (app.kubernetes.io/instance: relay-a, app.kubernetes.io/component: api) | http://relay-a-relayforge-test-sink:8080/livez | ожидалось: REACHED | результат: REACHED | OK=YES
+np-api-b-cross (app.kubernetes.io/instance: relay-b, app.kubernetes.io/component: api) | http://relay-a-relayforge-test-sink:8080/livez | ожидалось: BLOCKED | результат: BLOCKED(ConnectionRefusedError) | OK=YES

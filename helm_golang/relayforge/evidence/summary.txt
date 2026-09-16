@@ -1,0 +1,520 @@
+===================================================================
+RelayForge Evidence Summary
+Generated: 2026-09-13T09:23:45Z
+===================================================================
+
+=== helm version ===
+v4.2.4+g3900f43
+
+=== helm lint --strict ===
+==> Linting chart/relayforge
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+
+=== helm template (relay-a: values.yaml + values-relay-a.yaml + CLI overrides) ===
+---
+# Source: relayforge/templates/networkpolicy-api-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-api-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: api
+  policyTypes:
+  - Egress
+  egress:
+  # Kubernetes API: egress-правила применяются к трафику ПОСЛЕ DNAT сервиса,
+  # поэтому порт endpoint (6443 для k3s) разрешается вместе с портом сервиса.
+  - to:
+    - ipBlock:
+        cidr: 172.18.0.0/16
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-api-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-api-ingress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: api
+  policyTypes:
+  - Ingress
+  ingress:
+  # Только helm-test этого release; неизвестные client-поды и другой release не проходят.
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: relay-a
+          app.kubernetes.io/component: helm-test
+    ports:
+    - port: 8080
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-cleanup-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-cleanup-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+
+=== helm template (both releases: dev и relay-b) ===
+---
+# Source: relayforge/templates/networkpolicy-api-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-b-relayforge-api-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-b
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-b
+      app.kubernetes.io/component: api
+  policyTypes:
+  - Egress
+  egress:
+  # Kubernetes API: egress-правила применяются к трафику ПОСЛЕ DNAT сервиса,
+  # поэтому порт endpoint (6443 для k3s) разрешается вместе с портом сервиса.
+  - to:
+    - ipBlock:
+        cidr: 172.18.0.0/16
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+
+=== server dry-run (template -> kubectl apply --dry-run=server) ===
+networkpolicy.networking.k8s.io/relay-a-relayforge-api-egress created (server dry run)
+networkpolicy.networking.k8s.io/relay-a-relayforge-api-ingress created (server dry run)
+networkpolicy.networking.k8s.io/relay-a-relayforge-cleanup-egress created (server dry run)
+networkpolicy.networking.k8s.io/relay-a-relayforge-default-deny created (server dry run)
+networkpolicy.networking.k8s.io/relay-a-relayforge-helm-test-egress created (server dry run)
+networkpolicy.networking.k8s.io/relay-a-relayforge-test-sink-ingress created (server dry run)
+networkpolicy.networking.k8s.io/relay-a-relayforge-worker-egress created (server dry run)
+serviceaccount/relay-a-relayforge-api created (server dry run)
+serviceaccount/relay-a-relayforge-cleanup created (server dry run)
+serviceaccount/relay-a-relayforge-helm-test created (server dry run)
+serviceaccount/relay-a-relayforge-test-sink created (server dry run)
+serviceaccount/relay-a-relayforge-worker created (server dry run)
+configmap/relay-a-relayforge-destinations created (server dry run)
+role.rbac.authorization.k8s.io/relay-a-relayforge-api created (server dry run)
+role.rbac.authorization.k8s.io/relay-a-relayforge-cleanup created (server dry run)
+rolebinding.rbac.authorization.k8s.io/relay-a-relayforge-api created (server dry run)
+rolebinding.rbac.authorization.k8s.io/relay-a-relayforge-cleanup created (server dry run)
+service/relay-a-relayforge-test-sink created (server dry run)
+service/relay-a-relayforge-api created (server dry run)
+deployment.apps/relay-a-relayforge-api created (server dry run)
+
+=== helm status relay-a ===
+NAME: relay-a
+LAST DEPLOYED: Sun Sep 13 13:17:26 2026
+NAMESPACE: relayforge
+STATUS: deployed
+REVISION: 12
+DESCRIPTION: Upgrade complete
+RESOURCES:
+==> v1/ServiceAccount
+NAME                     AGE
+relay-a-relayforge-api   90m
+relay-a-relayforge-cleanup   90m
+relay-a-relayforge-helm-test   90m
+relay-a-relayforge-test-sink   90m
+relay-a-relayforge-worker   90m
+
+==> v1/Role
+NAME                     CREATED AT
+relay-a-relayforge-api   2026-09-13T07:53:45Z
+relay-a-relayforge-cleanup   2026-09-13T07:53:45Z
+
+==> v1/RoleBinding
+NAME                     ROLE                          AGE
+relay-a-relayforge-api   Role/relay-a-relayforge-api   90m
+relay-a-relayforge-cleanup   Role/relay-a-relayforge-cleanup   90m
+
+==> v1/Service
+NAME                           TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+relay-a-relayforge-test-sink   ClusterIP   10.43.79.45   <none>        8080/TCP   90m
+relay-a-relayforge-api   ClusterIP   10.43.86.146   <none>   8080/TCP   7m50s
+
+==> v1/Deployment
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+relay-a-relayforge-api   1/1     1            1           90m
+relay-a-relayforge-test-sink   1/1   1     1     90m
+
+==> v1/NetworkPolicy
+NAME                            POD-SELECTOR                                                         AGE
+relay-a-relayforge-api-egress   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-a   90m
+relay-a-relayforge-api-ingress   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-a   90m
+relay-a-relayforge-cleanup-egress   app.kubernetes.io/component=cleanup,app.kubernetes.io/instance=relay-a   90m
+relay-a-relayforge-default-deny   app.kubernetes.io/instance=relay-a   90m
+relay-a-relayforge-helm-test-egress   app.kubernetes.io/component=helm-test,app.kubernetes.io/instance=relay-a   90m
+relay-a-relayforge-test-sink-ingress   app.kubernetes.io/component=test-sink,app.kubernetes.io/instance=relay-a   90m
+relay-a-relayforge-worker-egress   app.kubernetes.io/component=delivery,app.kubernetes.io/instance=relay-a   90m
+
+==> v1/ConfigMap
+NAME                              DATA   AGE
+relay-a-relayforge-destinations   1      90m
+
+==> v1/Pod(related)
+NAME                                      READY   STATUS    RESTARTS   AGE
+relay-a-relayforge-api-764b9cb998-qjtwc   1/1     Running   0          6m19s
+relay-a-relayforge-test-sink-859b595897-pnn6n   1/1   Running   0     6m18s
+
+
+TEST SUITE:     relay-a-relayforge-helm-test
+Last Started:   Sun Sep 13 13:23:02 2026
+Last Completed: Sun Sep 13 13:23:19 2026
+Phase:          Succeeded
+
+=== helm get values relay-a --all ===
+COMPUTED VALUES:
+api:
+  backpressure:
+    maxActiveJobs: 10
+    maxConcurrentCreate: 2
+  port: 8080
+  replicas: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  testFaultCreateTimeout: false
+cleanup:
+  activeDeadlineSeconds: 120
+clientAuthSecret:
+  key: client-token
+  name: relay-a-client-auth
+destinations:
+  test:
+    url: http://relay-a-relayforge-test-sink:8080
+fullnameOverride: ""
+image:
+  digest: sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0
+  repository: relayforge-registry:5050/relayforge
+nameOverride: ""
+networkPolicy:
+  enabled: true
+  externalDestinationCidrs: []
+  kubernetesApiCidr: 172.18.0.0/16
+secretRevision: "1"
+testSink:
+  controlSecret:
+    key: control-token
+    name: relay-a-verification
+  enabled: true
+  port: 8080
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  verificationSecret:
+    key: verification-key
+    name: relay-a-verification
+worker:
+  activeDeadlineSeconds: 300
+  backoffLimit: 3
+  permanentExitCode: 12
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  signingSecret:
+    key: signing-key
+    name: relay-a-signing
+  ttlSecondsAfterFinished: 600
+
+=== helm get manifest relay-a (first 100 lines) ===
+---
+# Source: relayforge/templates/networkpolicy-api-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-api-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: api
+  policyTypes:
+  - Egress
+  egress:
+  # Kubernetes API: egress-правила применяются к трафику ПОСЛЕ DNAT сервиса,
+  # поэтому порт endpoint (6443 для k3s) разрешается вместе с портом сервиса.
+  - to:
+    - ipBlock:
+        cidr: 172.18.0.0/16
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+  # DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-api-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-api-ingress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: api
+  policyTypes:
+  - Ingress
+  ingress:
+  # Только helm-test этого release; неизвестные client-поды и другой release не проходят.
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: relay-a
+          app.kubernetes.io/component: helm-test
+    ports:
+    - port: 8080
+      protocol: TCP
+---
+# Source: relayforge/templates/networkpolicy-cleanup-egress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: relay-a-relayforge-cleanup-egress
+  labels:
+    helm.sh/chart: relayforge-0.1.0
+    app.kubernetes.io/name: relayforge
+    app.kubernetes.io/instance: relay-a
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: relay-a
+      app.kubernetes.io/component: cleanup
+  policyTypes:
+  - Egress
+  egress:
+  # Kubernetes API: egress-правила применяются к трафику ПОСЛЕ DNAT сервиса,
+  # поэтому порт endpoint (6443 для k3s) разрешается вместе с портом сервиса.
+  - to:
+    - ipBlock:
+        cidr: 172.18.0.0/16
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+
+=== helm history relay-a ===
+REVISION	UPDATED                 	STATUS    	CHART           	APP VERSION	DESCRIPTION                                                                                                                                                                                     
+3       	Sun Sep 13 13:03:14 2026	superseded	relayforge-0.1.0	0.1.0      	Rollback to 1                                                                                                                                                                                   
+4       	Sun Sep 13 13:03:30 2026	superseded	relayforge-0.1.0	0.1.0      	Upgrade complete                                                                                                                                                                                
+5       	Sun Sep 13 13:03:42 2026	superseded	relayforge-0.1.0	0.1.0      	Rollback to 3                                                                                                                                                                                   
+6       	Sun Sep 13 13:04:16 2026	failed    	relayforge-0.1.0	0.1.0      	Upgrade "relay-a" failed: resource Deployment/relayforge/relay-a-relayforge-api not ready. status: InProgress, message: Pending termination: 1                                                  
+        	                        	          	                	           	resource Deployment/relayforge/relay-a-relayfor...                                                                                                                                              
+7       	Sun Sep 13 13:07:17 2026	superseded	relayforge-0.1.0	0.1.0      	Rollback to 5                                                                                                                                                                                   
+8       	Sun Sep 13 13:15:05 2026	superseded	relayforge-0.1.0	0.1.0      	Upgrade "relay-a" failed: conflict occurred while applying object relayforge/relay-a-relayforge-api /v1, Kind=Service: Apply failed with 3 conflicts: conflicts with "kubectl-create" using v...
+9       	Sun Sep 13 13:15:06 2026	failed    	relayforge-0.1.0	0.1.0      	Rollback "relay-a" failed: conflict occurred while applying object relayforge/relay-a-relayforge-api /v1, Kind=Service: Apply failed with 3 conflicts: conflicts with "kubectl-create" using ...
+10      	Sun Sep 13 13:16:07 2026	superseded	relayforge-0.1.0	0.1.0      	Upgrade complete                                                                                                                                                                                
+11      	Sun Sep 13 13:17:09 2026	superseded	relayforge-0.1.0	0.1.0      	Upgrade complete                                                                                                                                                                                
+12      	Sun Sep 13 13:17:26 2026	deployed  	relayforge-0.1.0	0.1.0      	Upgrade complete                                                                                                                                                                                
+
+=== helm history relay-b ===
+REVISION	UPDATED                 	STATUS  	CHART           	APP VERSION	DESCRIPTION     
+1       	Sun Sep 13 11:45:24 2026	deployed	relayforge-0.1.0	0.1.0      	Install complete
+
+=== helm test relay-a --logs ===
+NAME: relay-a
+LAST DEPLOYED: Sun Sep 13 13:17:26 2026
+NAMESPACE: relayforge
+STATUS: deployed
+REVISION: 12
+DESCRIPTION: Upgrade complete
+TEST SUITE:     relay-a-relayforge-helm-test
+Last Started:   Sun Sep 13 13:23:46 2026
+Last Completed: Sun Sep 13 13:24:02 2026
+Phase:          Succeeded
+
+Error: unable to get pod relay-a-relayforge-helm-test: pods "relay-a-relayforge-helm-test" not found
+
+=== kubectl get deploy,svc,pdb,job,pod -o wide ===
+NAME                                           READY   UP-TO-DATE   AVAILABLE   AGE    CONTAINERS   IMAGES                                                                                                        SELECTOR
+deployment.apps/relay-a-relayforge-api         1/1     1            1           90m    api          relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-a,app.kubernetes.io/name=relayforge
+deployment.apps/relay-a-relayforge-test-sink   1/1     1            1           90m    test-sink    relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0   app.kubernetes.io/component=test-sink,app.kubernetes.io/instance=relay-a,app.kubernetes.io/name=relayforge
+deployment.apps/relay-b-relayforge-api         1/1     1            1           98m    api          relayforge-registry:5050/relayforge@sha256:8fb232af561633d17b024bfca6fe4f8885e2ce215bfa75126b5f521a0c4b9772   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-b,app.kubernetes.io/name=relayforge
+deployment.apps/relay-b-relayforge-test-sink   1/1     1            1           98m    test-sink    relayforge-registry:5050/relayforge@sha256:8fb232af561633d17b024bfca6fe4f8885e2ce215bfa75126b5f521a0c4b9772   app.kubernetes.io/component=test-sink,app.kubernetes.io/instance=relay-b,app.kubernetes.io/name=relayforge
+deployment.apps/relay-t-relayforge-api         1/1     1            1           173m   api          relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-t,app.kubernetes.io/name=relayforge
+deployment.apps/relay-t-relayforge-test-sink   1/1     1            1           173m   test-sink    relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0   app.kubernetes.io/component=test-sink,app.kubernetes.io/instance=relay-t,app.kubernetes.io/name=relayforge
+
+NAME                                   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE    SELECTOR
+service/relay-a-relayforge-api         ClusterIP   10.43.86.146    <none>        8080/TCP   8m6s   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-a,app.kubernetes.io/name=relayforge
+service/relay-a-relayforge-test-sink   ClusterIP   10.43.79.45     <none>        8080/TCP   90m    app.kubernetes.io/component=test-sink,app.kubernetes.io/instance=relay-a,app.kubernetes.io/name=relayforge
+service/relay-b-relayforge-api         ClusterIP   10.43.184.213   <none>        8080/TCP   98m    app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-b,app.kubernetes.io/name=relayforge
+service/relay-b-relayforge-test-sink   ClusterIP   10.43.175.190   <none>        8080/TCP   98m    app.kubernetes.io/component=test-sink,app.kubernetes.io/instance=relay-b,app.kubernetes.io/name=relayforge
+service/relay-t-relayforge-api         ClusterIP   10.43.150.193   <none>        8080/TCP   173m   app.kubernetes.io/component=api,app.kubernetes.io/instance=relay-t,app.kubernetes.io/name=relayforge
+service/relay-t-relayforge-test-sink   ClusterIP   10.43.190.128   <none>        8080/TCP   173m   app.kubernetes.io/component=test-sink,app.kubernetes.io/instance=relay-t,app.kubernetes.io/name=relayforge
+
+NAME                                                                        STATUS     COMPLETIONS   DURATION   AGE    CONTAINERS   IMAGES                                                                                                        SELECTOR
+job.batch/relay-a-12f59718df2cb5e902cb51b391756d2152adc352a784aea8acc8048   Complete   1/1           7s         100s   worker       relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0   batch.kubernetes.io/controller-uid=390b1898-b147-46c1-a3bb-5aff7425fbdb
+job.batch/relay-a-5d25c25ef2a9a3731c2eaae86f6764125e440f46a86de84202866ec   Complete   1/1           8s         54s    worker       relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0   batch.kubernetes.io/controller-uid=3f8b2e06-296d-4211-8924-f1d0acc4bb5b
+job.batch/relay-a-df97671d5a66abfb7106cee882e7da699d6adcf21bc4f9f9c754f5f   Complete   1/1           8s         12s    worker       relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0   batch.kubernetes.io/controller-uid=ed234bec-b4ce-44d8-82e2-53999b6426a4
+
+NAME                                                                  READY   STATUS      RESTARTS   AGE     IP            NODE                      NOMINATED NODE   READINESS GATES
+pod/relay-a-12f59718df2cb5e902cb51b391756d2152adc352a784aea8aclcrtn   0/1     Completed   0          101s    10.42.1.152   k3d-relayforge-agent-0    <none>           <none>
+pod/relay-a-5d25c25ef2a9a3731c2eaae86f6764125e440f46a86de84202rbjg4   0/1     Completed   0          55s     10.42.1.153   k3d-relayforge-agent-0    <none>           <none>
+pod/relay-a-df97671d5a66abfb7106cee882e7da699d6adcf21bc4f9f9c7dkgjd   0/1     Completed   0          13s     10.42.1.154   k3d-relayforge-agent-0    <none>           <none>
+pod/relay-a-relayforge-api-764b9cb998-qjtwc                           1/1     Running     0          6m36s   10.42.2.23    k3d-relayforge-agent-1    <none>           <none>
+pod/relay-a-relayforge-test-sink-859b595897-pnn6n                     1/1     Running     0          6m35s   10.42.1.151   k3d-relayforge-agent-0    <none>           <none>
+pod/relay-b-relayforge-api-6454fb5685-jdhgr                           1/1     Running     0          98m     10.42.0.72    k3d-relayforge-server-0   <none>           <none>
+pod/relay-b-relayforge-test-sink-86c69cdf8c-7qfqv                     1/1     Running     0          98m     10.42.1.125   k3d-relayforge-agent-0    <none>           <none>
+pod/relay-t-relayforge-api-794f85c8b9-fttzp                           1/1     Running     0          70m     10.42.0.109   k3d-relayforge-server-0   <none>           <none>
+pod/relay-t-relayforge-test-sink-c79b87c8c-pqbvb                      1/1     Running     0          94m     10.42.2.11    k3d-relayforge-agent-1    <none>           <none>
+
+=== kubectl get endpointslice ===
+NAME                                 ADDRESSTYPE   PORTS   ENDPOINTS     AGE
+relay-a-relayforge-api-75mrv         IPv4          8080    10.42.2.23    8m7s
+relay-a-relayforge-test-sink-xffn7   IPv4          8080    10.42.1.151   90m
+relay-b-relayforge-api-wqxr5         IPv4          8080    10.42.0.72    98m
+relay-b-relayforge-test-sink-s4rg2   IPv4          8080    10.42.1.125   98m
+relay-t-relayforge-api-zhdhl         IPv4          8080    10.42.0.109   173m
+relay-t-relayforge-test-sink-wngxv   IPv4          8080    10.42.2.11    173m
+
+=== auth can-i: API ===
+yes
+yes
+yes
+no
+no (expected)
+no
+no (expected)
+
+=== auth can-i: worker ===
+no
+no (expected)
+
+=== auth can-i: cleanup ===
+yes
+yes
+no
+no (expected)
+
+=== NetworkPolicy connectivity matrix ===
+np-helmtest-a (app.kubernetes.io/instance: relay-a, app.kubernetes.io/component: helm-test) | http://relay-a-relayforge-api:8080/livez | ожидалось: REACHED | результат: REACHED | OK=YES
+np-unknown (app.kubernetes.io/instance: diag, app.kubernetes.io/component: client) | http://relay-a-relayforge-api:8080/livez | ожидалось: BLOCKED | результат: BLOCKED(ConnectionRefusedError) | OK=YES
+np-cross (app.kubernetes.io/instance: relay-b, app.kubernetes.io/component: delivery) | http://relay-a-relayforge-test-sink:8080/livez | ожидалось: BLOCKED | результат: BLOCKED(ConnectionRefusedError) | OK=YES
+np-worker-b-own (app.kubernetes.io/instance: relay-b, app.kubernetes.io/component: delivery) | http://relay-b-relayforge-test-sink:8080/livez | ожидалось: REACHED | результат: REACHED | OK=YES
+np-helmtest-a-to-b (app.kubernetes.io/instance: relay-a, app.kubernetes.io/component: helm-test) | http://relay-b-relayforge-api:8080/livez | ожидалось: BLOCKED | результат: BLOCKED(ConnectionRefusedError) | OK=YES
+
+=== verify.py ===
+[OK] verify: livez 200
+[OK] verify: readyz 200
+[OK] verify: metrics содержит relayforge_requests_total
+[OK] verify: 401 без токена
+[OK] verify: 401 неверный токен
+[OK] verify: 422 неизвестный destination
+[OK] verify: 422 неверный event_type
+[OK] verify: 422 короткий Idempotency-Key
+[OK] verify: 400 duplicate JSON keys
+[OK] verify: 413 тело > 16 KiB
+[OK] verify: create → 202 — {"id":"relay-a-c9df0dcbd70d041d","status":"queued","attempts":0,"duplicate":false,"created_at":"2026
+[OK] verify: duplicate → 200, тот же id, duplicate=true — {"id":"relay-a-c9df0dcbd70d041d","status":"queued","attempts":0,"duplicate":true,"created_at":"2026-
+[OK] verify: конфликт payload → 409 IDEMPOTENCY_CONFLICT
+[OK] verify: 20 параллельных → один delivery ID — statuses=[200, 202], ids={'relay-a-fbf9dfe927f19d89'}
+[OK] verify: конкурентная доставка завершилась — {'id': 'relay-a-fbf9dfe927f19d89', 'status': 'succeeded', 'attempts': 1, 'destination': 'test', 'created_at': '2026-09-1
+[OK] verify: один Job на один ключ (конкурентный) — new_jobs=['relay-a-862aa3df92d573d3e1e49bb8675e73c3185732bae7bc99e75243e11', 'relay-a-d2f0124a209ccd6d6829cdb8d68d2ccd8a8337d8dc8266b0abc28b0']
+[OK] verify: transient: create 202 — status=202 {"id":"relay-a-037514c2b5b2230e","status":"queued","attempts":0,"duplicate":false,"created_at":"2026-09-13T09:24:12.7389
+[OK] verify: временная ошибка → succeeded — {'id': 'relay-a-037514c2b5b2230e', 'status': 'succeeded', 'attempts': 3, 'destination': 'test', 'created_at': '2026-09-1
+[OK] verify: sink: >=3 HTTP-попытки, 1 применение — {'applied': True, 'attempts': 3}
+[OK] verify: постоянная ошибка → failed — {'id': 'relay-a-0b7de4e5e8606ef8', 'status': 'failed', 'attempts': 1, 'destination': 'test', 'created_at': '2026-09-13T0
+[OK] verify: failure описан в ответе — {'code': 'JOB_FAILED', 'message': 'Container worker for pod relayforge/relay-a-e99d3c1ebea2869160b37c2c5f5ad9d36ae11e86b
+[OK] verify: в логах worker нет payload/подписи/секретов — leaks=[], job=relay-a-e99d3c1ebea2869160b37c2c5f5ad9d36ae11e86b9f217ed624bdb9
+[OK] verify: jobs_created_total вырос — 3.0 -> 7.0
+[OK] verify: requests_total{result=success} вырос — 157.0 -> 286.0
+[OK] verify: requests_total{result=conflict} вырос — 0.0 -> 1.0
+PASS
+
+===================================================================
+End of summary
+===================================================================

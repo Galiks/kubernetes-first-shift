@@ -1,0 +1,12 @@
+33s         Normal    Created             pod/relay-a-relayforge-api-764b9cb998-qbh2v                           Container created
+33s         Normal    Pulled              pod/relay-a-relayforge-api-764b9cb998-qbh2v                           Container image "relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0" already present on machine and can be accessed by the pod
+32s         Normal    Started             pod/relay-a-relayforge-test-sink-859b595897-j5xrq                     Container started
+32s         Normal    SuccessfulCreate    replicaset/relay-a-relayforge-test-sink-859b595897                    Created pod: relay-a-relayforge-test-sink-859b595897-j5xrq
+32s         Normal    Created             pod/relay-a-relayforge-test-sink-859b595897-j5xrq                     Container created
+32s         Normal    Pulled              pod/relay-a-relayforge-test-sink-859b595897-j5xrq                     Container image "relayforge-registry:5050/relayforge@sha256:2ead2e3c9ba7df1fb8472bb6e18988c2619a6cce67e639523b18db06753efac0" already present on machine and can be accessed by the pod
+32s         Normal    ScalingReplicaSet   deployment/relay-a-relayforge-test-sink                               Scaled up replica set relay-a-relayforge-test-sink-859b595897 from 0 to 1
+29s         Warning   Unhealthy           pod/relay-a-relayforge-api-764b9cb998-qbh2v                           Startup probe failed: Get "http://10.42.2.18:8080/livez": dial tcp 10.42.2.18:8080: connect: connection refused
+28s         Warning   Unhealthy           pod/relay-a-relayforge-test-sink-859b595897-j5xrq                     Startup probe failed: Get "http://10.42.0.113:8080/livez": dial tcp 10.42.0.113:8080: connect: connection refused
+27s         Normal    Killing             pod/relay-a-relayforge-api-5584478545-ww9jz                           Stopping container api
+27s         Normal    SuccessfulDelete    replicaset/relay-a-relayforge-api-5584478545                          Deleted pod: relay-a-relayforge-api-5584478545-ww9jz
+27s         Normal    ScalingReplicaSet   deployment/relay-a-relayforge-api                                     Scaled down replica set relay-a-relayforge-api-5584478545 from 1 to 0

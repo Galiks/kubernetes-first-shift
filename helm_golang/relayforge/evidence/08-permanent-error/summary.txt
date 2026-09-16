@@ -1,0 +1,6 @@
+delivery_status=failed
+failure={"code": "JOB_FAILED", "message": "Container worker for pod relayforge/relay-t-7e93d4b44992471f47e8a5956d4bf8cb1b1eefed7366492efczpqkh failed with exit code 12 matching FailJob rule at index 0"}
+job_failed_condition_reason=PodFailurePolicy
+worker_pod_attempts=1
+sink отвечал 401 (подпись не совпадает); podFailurePolicy FailJob
+завершил Job без исчерпания временных попыток

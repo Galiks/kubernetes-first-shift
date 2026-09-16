@@ -1,0 +1,38 @@
+{
+  "goal": "Rewrite RelayForge Python->Go in helm_golang/relayforge, byte-compatible canonical JSON, delete Python at end",
+  "mode": "NORMAL",
+  "workspace": "D:\\Projects\\kubernetes-first-shift\\helm_golang\\relayforge",
+  "phase": "DONE",
+  "oracle_kept": "helm/relayforge (Python canonical.py = ground truth; used by tools/gen_corpus.py + tools/verify_oracle.py)",
+  "corpus": "testdata/canonical.jsonl (70 rows; 53 valid, 17 error), regenerated, pins: 1e-5 fixed / 1e-6 scientific, overflow 1e309->null, lone surrogates rejected",
+  "gates": {
+    "go build ./...": 0,
+    "go vet ./...": 0,
+    "go test ./... -count=1": 0 (api 39+, body, canonical, testsink, worker; ~135 test lines verbose)",
+    "binary smoke": "usage/exit 2 on bad mode; config error exit 1; worker command [\"/relayforge\",\"worker\"]",
+    "ui.html byte-parity": true (17402 bytes, LF)"
+  },
+  "packages": ["cmd/relayforge","internal/api(*14)+ui.html","internal/worker","internal/testsink","internal/helmtest","internal/cleanup","internal/canonical","internal/config","internal/logging","internal/secrets","internal/body"],
+  "devops_done": "Dockerfile multi-stage distroless + 4 chart command arrays + .dockerignore + Makefile/scripts unchanged (no python refs)",
+  "docs_done": "README/RUNBOOK/GUIDE/SECURITY/DECISIONS updated to Go (python remains only in scripts/verify.py - intentional)",
+  "reviews": {
+    "code_review": "2 BLOCKER + 6 MAJOR + 11 MINOR found; BLOCKERs B1(ready)/B2(orjson threshold<=-6) and MAJOR M1-M6 all FIXED; remaining accepted MINORs documented below",
+    "security_review": "no blockers; cripto/auth/validation/hardening faithful; MINOR #2 WriteTimeout applied to API; #4 values placeholder noted only",
+    "ui.parity": "ui.html normalized LF, byte-identical to Python"
+  },
+  "accepted_divergences": [
+    "M5 lone-surrogate payload: Go rejects with 400 INVALID_JSON (via canonical) vs Python 500 TypeError - safer, documented",
+    "m2 body >64-bit int errors vs Python orjson.loads->float - unreachable via API (canonical rejects first)",
+    "m4 Canonicalize accepts non-object root (StrictJSONLoads enforces object) - matches Python canonicalize contract",
+    "m8 testsink receipts in-memory vs Python emptyDir persistence; drop-mode closes conn; n=0 coercion - test-tool semantics",
+    "m10 isoFormat microsecond zero-padding (cosmetic, unhashed)",
+    "m11 RELAYFORGE_PAYLOAD env nested-key order (worker re-sorts; cosmetic)"
+  ],
+  "env_limits": {
+    "helm": "NOT INSTALLED -> helm lint/template gate not runnable here",
+    "k3d/kind": "NOT INSTALLED -> no cluster e2e / verify.py / scenario re-runs",
+    "docker": "present but no image build/pull attempted (no registry; correctness of golang:1.26-alpine / distroless tags unverified against registry)"
+  },
+  "python_deleted": ["src/relayforge","tests/*.py","pyproject.toml","uv.lock","tools/check_ui_parity.py","tools/diff_ui.py"],
+  "done": true
+}
