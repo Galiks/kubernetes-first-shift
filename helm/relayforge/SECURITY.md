@@ -4,7 +4,7 @@
 
 | ServiceAccount | token | RBAC | Назначение |
 |---|---|---|---|
-| `<release>-relayforge-api` | да (pod-level автоматически) + RoleBinding | Role `<release>-relayforge-api`: `batch/jobs` get/list/watch/create; `pods` get/list; `apps/deployments` get; `deployments/scale` get/patch (resourceNames только свой Deployment) | API: создание/чтение delivery-Jobs, чтение Pods |
+| `<release>-relayforge-api` | да (pod-level автоматически) + RoleBinding | Role `<release>-relayforge-api`: `batch/jobs` get/list/watch/create; `pods` get/list/**watch**; `pods/log` get; `apps/deployments` get; `deployments/scale` get/patch (resourceNames только свой Deployment `-api`) | API: создание/чтение delivery-Jobs, чтение Pods и их логов, масштабирование своего Deployment |
 | `<release>-relayforge-worker` | **нет** (`automountServiceAccountToken: false`) | — | worker-контейнеры delivery-Jobs (внешний HTTP, без K8s) |
 | `<release>-relayforge-test-sink` | нет | — | test-sink (только при `testSink.enabled`) |
 | `<release>-relayforge-helm-test` | нет | — | helm-test Job (доступ к client-auth Secret — через явный Secret volume, kubelet; НЕ через Kubernetes API) |
@@ -17,10 +17,29 @@
 - API не имеет write-доступа к Pods (не может создать/удалить Pod), не читает
   Secret'ы и не управляет чужими Deployment.
 - wildcard verbs/resources, ClusterRole/ClusterRoleBinding не используются.
+- `pods` **watch** выдан потому, что RBAC-контракт задания (`RELAYFORGE_TASK.md`,
+  раздел «Представление доставки в Kubernetes») требует `get`/`list`/`watch` для
+  Jobs **и** Pods. Текущая реализация Pods/watch-события **не потребляет**:
+  статус Pod'ов читается через `get`/`list` с фильтрацией по ownerReference,
+  логи — через `pods/log` (UI). Это осознанное отклонение от least privilege:
+  watch на Pods в масштабе namespace открывает API ServiceAccount метаданные всех
+  Pod'ов namespace (включая имена secret-volume) — та же namespace-экспозиция,
+  что уже описана выше для list Jobs/Pods; сократить её Role не может (нет
+  селектора по label/ownerReference).
+- `pods/log` get — для встроенной UI-панели, которая показывает логи
+  worker-подов конкретной доставки (`/ui/api/deliveries/{id}/logs`). Это доступ
+  **только на чтение** логов Pod'ов namespace; секреты и env других Pod'ов он не
+  раскрывает, но подразумевает, что в логи worker'ов не попадают payload/секреты
+  (см. ниже).
+- `deployments/scale` get/patch с `resourceNames` только на свой `-api`
+  Deployment — для сценария scale-to-zero (cleanup/uninstall): pre-delete hook
+  масштабирует API в 0 и дожидается исчезновения реплик перед удалением
+  delivery-Jobs. Patch чужого Deployment невозможен (resourceNames).
 
 Проверяется точечными `auth can-i` (см. `evidence/summary.txt`):
-API — create/get/list/watch jobs, get/list pods; НЕ может create pods, get secrets,
-patch чужие deployments. Worker — не может читать Kubernetes API.
+API — create/get/list/watch jobs, get/list/watch pods, get pods/log; НЕ может
+create pods, get secrets, patch чужие deployments (scale patch — только свой
+`-api` Deployment по resourceNames). Worker — не может читать Kubernetes API.
 Cleanup — get/patch только своего Deployment + list/delete jobs; не может читать
 Secret'ы и менять чужой Deployment.
 

@@ -33,23 +33,17 @@ publish:
 # -----------------------------------------------------------------------------
 
 install:
-	# Устанавливаем или обновляем релиз 'relay-a' из OCI registry.
-	# digest читается из cluster/image-digest.txt (создаёт scripts/build.sh).
-	# --plain-http: локальный registry k3d работает по HTTP.
-	# --wait=watcher, --timeout, --rollback-on-failure — Helm 4 флаги финального прогона.
-	# --server-side=true включает Server-Side Apply (field ownership).
-	helm upgrade --install relay-a oci://localhost:5050/charts/relayforge --version 0.1.0 \
-	  -f chart/relayforge/values.yaml \
-	  -f chart/relayforge/values-relay-a.yaml \
-	  --set image.repository=relayforge-registry:5050/relayforge \
-	  --set image.digest=$$(cat cluster/image-digest.txt) \
-	  --namespace relayforge \
-	  --plain-http \
-	  --wait=watcher --timeout 5m --rollback-on-failure --server-side=true
+	# Единый гейтед-путь установки: scripts/install.sh (тот же путь, что и upgrade).
+	# Скрипт требует cluster/image-digest.txt (создаёт scripts/build.sh), выполняет
+	# helm lint --strict, local template и server dry-run, затем
+	# helm upgrade --install с --wait=watcher, --timeout, --rollback-on-failure,
+	# --server-side=true (Server-Side Apply / field ownership) и --plain-http.
+	./scripts/install.sh relay-a relayforge
 
 upgrade:
-	# upgrade совпадает с install (helm upgrade --install); параметры — через
-	# переменные окружения скрипта (RELEASE, NAMESPACE) либо дефолты.
+	# upgrade совпадает с install: оба используют scripts/install.sh с его гейтами
+	# (digest guard, strict lint, local template, server dry-run) и helm upgrade --install.
+	# Параметры — через аргументы либо переменные окружения скрипта (RELEASE, NAMESPACE).
 	./scripts/install.sh
 
 rollback:

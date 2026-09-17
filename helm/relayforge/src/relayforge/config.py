@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 
+APP_NAME = os.environ.get("RELAYFORGE_APP_NAME", "relayforge")
 RELEASE = os.environ["RELAYFORGE_RELEASE"]
 NAMESPACE = os.environ["RELAYFORGE_NAMESPACE"]
 API_PORT = int(os.environ.get("RELAYFORGE_API_PORT", "8080"))

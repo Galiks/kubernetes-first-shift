@@ -13,6 +13,10 @@ bash scripts/install.sh relay-a relayforge    # helm upgrade --install, --wait=w
 Предусловия: образ и chart опубликованы в локальный OCI registry (`make build publish`),
 секреты созданы (`bash cluster/secret_create.sh relayforge <prefix...>`), digest
 записан в `cluster/image-digest.txt`.
+Перед реальным `helm upgrade --install` `scripts/install.sh` выполняет гейты:
+проверку наличия `cluster/image-digest.txt`, `helm lint chart/relayforge --strict`,
+`helm template` цепочки values release и серверный dry-run (`--dry-run=server`);
+установка идёт только после прохождения всех гейтов.
 
 ### Тест
 
@@ -64,7 +68,9 @@ test-sink Pods (checksum-аннотации), API добавляет новую 
 
 Прогоны выполнялись на живом k3d-кластере (3 ноды; releases `relay-a`, `relay-b`,
 test release `relay-t`), каждый сценарий — папка `evidence/NN-*/run.sh` с README и
-артефактами. Ниже — как воспроизвести и что наблюдать.
+артефактами. Ниже — как воспроизвести и что наблюдать. Артефакты перед сдачей
+редактируются (`evidence/scripts/redact.sh`), покрытие включает `.jsonl` и `.md`
+файлы evidence — не только логи и текстовые выгрузки.
 
 ### 01. Параллельная идемпотентность
 ```bash

@@ -125,22 +125,14 @@ async def get_delivery(request: Request, delivery_id: str):
     job = jobs.items[0]
 
     # Число попыток = число запусков worker (Pods, созданных Job-контроллером).
+    # Pods выбираются по owner UID и labels нужного Job (ownerReference kind=Job).
     pods = await state.core.list_namespaced_pod(
         config.NAMESPACE,
         label_selector=f"job-name={job.metadata.name}",
     )
-    attempts = len(pods.items)
+    attempts = _count_job_pods(pods.items, job)
 
-    retained_until = None
-    if job.status and any(
-        c.type in ("Complete", "Failed") and c.status == "True"
-        for c in (job.status.conditions or [])
-    ):
-        finished = job.status.completion_time or job.status.start_time
-        if finished:
-            retained_until = (
-                finished + datetime.timedelta(seconds=config.WORKER_TTL)
-            ).isoformat()
+    retained_until = _retained_until(job)
 
     return {
         "id": delivery_id,
@@ -158,11 +150,51 @@ async def get_delivery(request: Request, delivery_id: str):
     }
 
 
+def _count_job_pods(pods, job) -> int:
+    """Считает Pods, принадлежащие именно этому Job.
+
+    Фильтрует по ownerReference kind="Job" c uid == job.metadata.uid.
+    Если у Job нет uid, откатывается к нефильтрованному списку.
+    """
+    job_uid = getattr(job.metadata, "uid", None)
+    if not job_uid:
+        return len(pods)
+    return sum(
+        1
+        for pod in pods
+        if any(
+            ref.kind == "Job"
+            and getattr(ref, "uid", None) == job_uid
+            for ref in (getattr(pod.metadata, "owner_references", None) or [])
+        )
+    )
+
+
 def _job_destination(job):
     try:
         return job.spec.template.spec.containers[0].env[1].value
     except (AttributeError, IndexError):
         return None
+
+
+def _retained_until(job) -> str | None:
+    """Момент, до которого TTL-контроллер держит завершённый Job.
+
+    Terminal-условие (Complete/Failed=True) + ttlSecondsAfterFinished.
+    Возвращает ISO-строку или None, если Job ещё не завершён (или время
+    недоступно).
+    """
+    if not job.status or not any(
+        c.type in ("Complete", "Failed") and c.status == "True"
+        for c in (job.status.conditions or [])
+    ):
+        return None
+    finished = job.status.completion_time or job.status.start_time
+    if not finished:
+        return None
+    return (
+        finished + datetime.timedelta(seconds=config.WORKER_TTL)
+    ).isoformat()
 
 
 def _job_status(job) -> str:

@@ -48,6 +48,8 @@ spec:
         imagePullPolicy: IfNotPresent
         command: ["python", "-m", "relayforge", "api"]
         env:
+        - name: RELAYFORGE_APP_NAME
+          value: {{ .Chart.Name | quote }}
         - name: RELAYFORGE_RELEASE
           value: {{ .Release.Name | quote }}
         - name: RELAYFORGE_NAMESPACE

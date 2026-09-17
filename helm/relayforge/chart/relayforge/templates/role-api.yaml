@@ -10,7 +10,7 @@ rules:
   verbs: ["get", "list", "watch", "create"]
 - apiGroups: [""]
   resources: ["pods"]
-  verbs: ["get", "list"]
+  verbs: ["get", "list", "watch"]
 # Логи worker-подов для UI-панели (read-only подресурс).
 - apiGroups: [""]
   resources: ["pods/log"]

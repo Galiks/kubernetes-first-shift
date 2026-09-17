@@ -7,6 +7,17 @@ NAMESPACE="${NAMESPACE:-relayforge}"
 
 OUTPUT="evidence/summary.txt"
 
+# values.schema.json требует image.digest формата sha256:<64 hex>.
+# Живой прогон: реальный digest из cluster/image-digest.txt; чистый рендер
+# без кластера: placeholder (64 hex-символа), реальный digest не выдумываем.
+if [ -z "${IMAGE_DIGEST:-}" ]; then
+  if [ -f cluster/image-digest.txt ]; then
+    IMAGE_DIGEST="$(cat cluster/image-digest.txt)"
+  else
+    IMAGE_DIGEST="sha256:$(printf '%064d' 1)"
+  fi
+fi
+
 echo "Collecting summary into $OUTPUT..."
 
 {
@@ -28,7 +39,7 @@ echo "=== helm template (relay-a: values.yaml + values-relay-a.yaml + CLI overri
 helm template "$RELEASE_A" chart/relayforge \
   -f chart/relayforge/values.yaml \
   -f chart/relayforge/values-relay-a.yaml \
-  --set image.digest="${IMAGE_DIGEST:-}" \
+  --set image.digest="$IMAGE_DIGEST" \
   --set api.replicas=1 \
   --set-string secretRevision=001 2>&1 | head -80 || true
 echo ""
@@ -37,14 +48,14 @@ echo "=== helm template (both releases: dev и relay-b) ==="
 helm template "$RELEASE_B" chart/relayforge \
   -f chart/relayforge/values.yaml \
   -f chart/relayforge/values-relay-b.yaml \
-  --set image.digest="${IMAGE_DIGEST:-}" 2>&1 | head -40 || true
+  --set image.digest="$IMAGE_DIGEST" 2>&1 | head -40 || true
 echo ""
 
 echo "=== server dry-run (template -> kubectl apply --dry-run=server) ==="
 helm template "$RELEASE_A" chart/relayforge \
   -f chart/relayforge/values.yaml \
   -f chart/relayforge/values-relay-a.yaml \
-  --set image.digest="${IMAGE_DIGEST:-}" 2>/dev/null \
+  --set image.digest="$IMAGE_DIGEST" 2>/dev/null \
   | kubectl apply --dry-run=server -f - 2>&1 | head -20 || true
 echo ""
 

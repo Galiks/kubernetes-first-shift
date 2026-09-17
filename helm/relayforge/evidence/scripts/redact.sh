@@ -11,11 +11,11 @@ fi
 echo "Redacting sensitive data in: $TARGET"
 
 # Bearer tokens
-find "$TARGET" -type f \( -name "*.log" -o -name "*.txt" -o -name "*.json" -o -name "*.yaml" \) \
+find "$TARGET" -type f \( -name "*.log" -o -name "*.txt" -o -name "*.json" -o -name "*.jsonl" -o -name "*.yaml" -o -name "*.md" \) \
   -exec sed -i -E 's/(Bearer )[A-Za-z0-9._:+/-]+/\1<REDACTED>/g' {} +
 
 # HMAC signatures (v1=<hex>)
-find "$TARGET" -type f \( -name "*.log" -o -name "*.txt" -o -name "*.json" -o -name "*.yaml" \) \
+find "$TARGET" -type f \( -name "*.log" -o -name "*.txt" -o -name "*.json" -o -name "*.jsonl" -o -name "*.yaml" -o -name "*.md" \) \
   -exec sed -i -E 's/(X-Relay-Signature: v1=)[a-f0-9]{64}/\1<REDACTED>/g' {} +
 
 # HMAC keys

@@ -21,6 +21,17 @@ SERVER: "uvicorn.Server | None" = None
 METRICS_INTERVAL = 5.0
 
 
+def _request_shutdown() -> None:
+    """SIGTERM/SIGINT: немедленно readiness=false, затем graceful shutdown.
+
+    uvicorn завершает активные запросы в пределах timeout_graceful_shutdown.
+    Вынесено в отдельную функцию для юнит-тестирования обработчика.
+    """
+    state.ready = False
+    if SERVER is not None:
+        SERVER.should_exit = True
+
+
 async def _metrics_loop() -> None:
     while True:
         if state.job_registry is not None:
@@ -50,15 +61,8 @@ async def lifespan(app: FastAPI):
 
     loop = asyncio.get_running_loop()
 
-    def _on_signal() -> None:
-        # Немедленно покидаем обслуживание; uvicorn завершает активные запросы
-        # в пределах timeout_graceful_shutdown.
-        state.ready = False
-        if SERVER is not None:
-            SERVER.should_exit = True
-
     for sig in (signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(sig, _on_signal)
+        loop.add_signal_handler(sig, _request_shutdown)
 
     state.ready = True
     try:

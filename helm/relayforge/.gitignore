@@ -11,10 +11,11 @@ __pycache__/
 .helm-charts/
 chart/relayforge/*.tgz
 
-# Локальные артефакты сборки/секреты (cluster/sercret_create.sh пишет токены на диск;
+# Локальные артефакты сборки/секреты (cluster/secret_create.sh пишет токены на диск
+# в текущий каталог — поэтому игнорируем *-token.txt на любом уровне;
 # kubeconfig.yaml — локальный kubeconfig для k3d, в Git не попадает)
 cluster/image-digest.txt
-cluster/*-token.txt
+*-token.txt
 cluster/kubeconfig.yaml
 
 # Локальные временные файлы

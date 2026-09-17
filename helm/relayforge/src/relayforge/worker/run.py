@@ -23,6 +23,14 @@ EXIT_PERMANENT = 12
 EXIT_NETWORK = 13
 
 
+def install_sigterm_handler(loop, shutdown: asyncio.Event) -> None:
+    """SIGTERM переводит worker в graceful shutdown (прерывает попытку).
+
+    Вынесено в отдельную функцию для юнит-тестирования обработчика.
+    """
+    loop.add_signal_handler(signal.SIGTERM, shutdown.set)
+
+
 async def run() -> None:
     setup_logging()
     delivery_id = os.environ["RELAYFORGE_DELIVERY_ID"]
@@ -53,7 +61,7 @@ async def run() -> None:
 
     loop = asyncio.get_running_loop()
     shutdown = asyncio.Event()
-    loop.add_signal_handler(signal.SIGTERM, shutdown.set)
+    install_sigterm_handler(loop, shutdown)
 
     start = time.monotonic()
     try:

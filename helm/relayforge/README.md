@@ -27,6 +27,10 @@ bash cluster/secret_create.sh relayforge relay-a relay-b
 make build && make publish        # и/или: bash scripts/build.sh && bash scripts/publish.sh
 
 # 5. Установка двух release из OCI (digest берётся из cluster/image-digest.txt):
+#    install.sh берёт непустой sha256-дайджест (`^sha256:[0-9a-f]{64}$`) из файла,
+#    который пишет `make build`; без файла и без валидного дайджеста установка
+#    останавливается ДО upgrade. Перед helm upgrade --install скрипт прогоняет
+#    гейты: helm lint --strict, helm template (цепочка values) и --dry-run=server.
 bash scripts/install.sh relay-a relayforge
 bash scripts/install.sh relay-b relayforge
 
@@ -48,6 +52,10 @@ RELEASE=relay-a API_PORT=18082 SINK_PORT=18083 bash evidence/01-parallel-idempot
 
 Профили values: `values.yaml` (defaults), `values-dev.yaml`, `values-ha.yaml`,
 `values-relay-a.yaml`, `values-relay-b.yaml` + валидирующая `values.schema.json`.
+
+Unit-темы (`pytest`, см. `tests/`) в дополнение к проверкам выше: преобразование
+Job status → API response; конкурентный лимит create; graceful shutdown API и
+worker по SIGTERM; новый delivery ID после повторного создания Job.
 
 ## Схема запроса
 

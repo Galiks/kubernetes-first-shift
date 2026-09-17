@@ -1,7 +1,9 @@
 image:
   repository: localhost:5050/relayforge
-  # digest зафиксирован в release values (см. scripts/build.sh и install.sh).
-  # Пустое значение проходит schema, но установка без digest невозможна.
+  # digest обязателен: values.schema.json требует строку формата sha256:<64 hex>.
+  # Реальное значение подставляется при установке из cluster/image-digest.txt
+  # (scripts/install.sh) либо фиксируется в release values (values-relay-*.yaml);
+  # для чистых рендеров chart-test.sh использует placeholder.
   digest: ""
 
 nameOverride: ""

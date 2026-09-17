@@ -1,10 +1,23 @@
 import json
+import math
 
 import orjson
 
 
 def _reject_special(value):
     raise ValueError(f"special float not allowed: {value}")
+
+
+def _parse_float(token: str) -> float:
+    """Отклоняет литералы, переполняющиеся в бесконечность (например 1e999).
+
+    Стандартный parse_float возвращает float('inf') для 1e999, а orjson
+    сериализует его как null — это молча ломало бы canonical hash.
+    """
+    value = float(token)
+    if not math.isfinite(value):
+        raise ValueError(f"non-finite number not allowed: {token}")
+    return value
 
 
 def _object_pairs_hook(pairs):
@@ -24,6 +37,7 @@ def strict_json_loads(text: str) -> dict:
             text,
             object_pairs_hook=_object_pairs_hook,
             parse_constant=_reject_special,
+            parse_float=_parse_float,
         )
     except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as e:
         raise ValueError(f"invalid JSON: {e}") from e

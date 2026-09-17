@@ -127,6 +127,22 @@ class JobRegistry:
         включая только что созданные этим Pod (pending)."""
         return sum(1 for j in self._jobs.values() if not j["terminal"]) + self._active_pending()
 
+    def _active_pending(self) -> int:
+        """Число pending-резервирований, ещё не подтверждённых watch.
+
+        Согласовано с расчётом активных в try_reserve: pending-запись об
+        уже известном (подтверждённом watch) Job не учитывается дважды.
+        Просроченные записи (старше _PENDING_TTL) удаляются здесь по той же
+        границе, что и в try_reserve: иначе брошенный pending (create не
+        удался, release() не вызван, watch Job не подтвердил) завышал бы
+        метрику active_jobs бессрочно.
+        """
+        now = time.monotonic()
+        for name, ts in list(self._pending.items()):
+            if now - ts > _PENDING_TTL:
+                self._pending.pop(name, None)
+        return sum(1 for n in self._pending if n not in self._jobs)
+
     def has(self, name: str) -> bool:
         """Известен ли Job с таким именем (детерминированное имя по ключу)."""
         return name in self._jobs or name in self._pending

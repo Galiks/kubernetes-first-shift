@@ -1,8 +1,13 @@
 import datetime
 import json
+import os
 from pathlib import Path
 
-RECEIPTS_DIR = Path("/var/lib/relayforge-test-sink/receipts")
+RECEIPTS_DIR = Path(
+    os.environ.get(
+        "RELAYFORGE_RECEIPTS_DIR", "/var/lib/relayforge-test-sink/receipts"
+    )
+)
 
 
 class ReceiptStore:

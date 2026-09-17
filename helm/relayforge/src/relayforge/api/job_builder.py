@@ -2,8 +2,10 @@ import datetime
 import hashlib
 import secrets
 
+from relayforge import config
 from kubernetes_asyncio import client as k8s
 
+COMPONENT_DELIVERY = "delivery"
 
 def job_name(release: str, idempotency_key: str) -> str:
     h = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest()
@@ -48,9 +50,9 @@ def build_job(
             name=name,
             namespace=namespace,
             labels={
-                "app.kubernetes.io/name": "relayforge",
+                "app.kubernetes.io/name": config.APP_NAME,
                 "app.kubernetes.io/instance": release,
-                "app.kubernetes.io/component": "delivery",
+                "app.kubernetes.io/component": COMPONENT_DELIVERY,
                 "relayforge/delivery-id": delivery_id,
             },
             annotations={
@@ -81,10 +83,15 @@ def build_job(
             template=k8s.V1PodTemplateSpec(
                 metadata=k8s.V1ObjectMeta(
                     labels={
-                        "app.kubernetes.io/name": "relayforge",
+                        "app.kubernetes.io/name": config.APP_NAME,
                         "app.kubernetes.io/instance": release,
-                        "app.kubernetes.io/component": "delivery",
+                        "app.kubernetes.io/component": COMPONENT_DELIVERY,
                         "relayforge/delivery-id": delivery_id,
+                    },
+                    # Новая revision секрета должна попадать в Pod template
+                    # следующих delivery Jobs (ротация секретов).
+                    annotations={
+                        "relayforge/secret-revision": secret_revision,
                     },
                 ),
                 spec=k8s.V1PodSpec(
